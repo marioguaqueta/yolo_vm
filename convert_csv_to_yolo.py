@@ -134,27 +134,31 @@ def main():
         print("      └── groundtruth/csv/")
         return 1
     
-    # Define conversions
+    # Define conversions - using YOLO standard structure
     conversions = [
         {
             'name': 'Training',
             'csv': DATASET_ROOT / "groundtruth/csv/train_big_size_A_B_E_K_WH_WB.csv",
-            'images': DATASET_ROOT / "train",
-            'labels': DATASET_ROOT / "train/labels"
+            'images': DATASET_ROOT / "train",  # Source images
+            'labels': DATASET_ROOT / "labels/train"  # YOLO standard: labels/train/
         },
         {
             'name': 'Validation',
             'csv': DATASET_ROOT / "groundtruth/csv/val_big_size_A_B_E_K_WH_WB.csv",
             'images': DATASET_ROOT / "val",
-            'labels': DATASET_ROOT / "val/labels"
+            'labels': DATASET_ROOT / "labels/val"  # YOLO standard: labels/val/
         },
         {
             'name': 'Test',
             'csv': DATASET_ROOT / "groundtruth/csv/test_big_size_A_B_E_K_WH_WB.csv",
             'images': DATASET_ROOT / "test",
-            'labels': DATASET_ROOT / "test/labels"
+            'labels': DATASET_ROOT / "labels/test"  # YOLO standard: labels/test/
         }
     ]
+    
+    print("\n💡 Note: Creating labels in YOLO standard structure (labels/train/, labels/val/, labels/test/)")
+    print("   Images remain in current location (train/, val/, test/)")
+    print("   Run reorganize_to_yolo_structure.py to complete YOLO standard structure")
     
     # Check what exists
     print("\nChecking files:")

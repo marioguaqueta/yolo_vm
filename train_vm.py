@@ -118,32 +118,56 @@ def create_data_yaml(config):
     # Create data.yaml in dataset root
     yaml_path = config.DATASET_ROOT / 'data.yaml'
     
+    # Check for YOLO standard structure (images/ and labels/ directories)
+    images_dir = config.DATASET_ROOT / "images"
+    labels_dir = config.DATASET_ROOT / "labels"
+    
+    if images_dir.exists() and labels_dir.exists():
+        # Standard YOLO structure
+        print("✓ Detected standard YOLO structure")
+        data_yaml = {
+            'path': str(config.DATASET_ROOT.absolute()),
+            'train': 'images/train',  # Relative to 'path'
+            'val': 'images/val',
+            'test': 'images/test',
+            'nc': len(config.CLASS_NAMES),
+            'names': list(config.CLASS_NAMES.values())
+        }
+        train_check = images_dir / "train"
+        val_check = images_dir / "val"
+    else:
+        # Old structure (images directly in train/val/test)
+        print("⚠ Using legacy structure (not standard YOLO)")
+        print("  Consider running: python reorganize_to_yolo_structure.py")
+        data_yaml = {
+            'path': str(config.DATASET_ROOT.absolute()),
+            'train': 'train',  # Relative to 'path'
+            'val': 'val',
+            'test': 'test',
+            'nc': len(config.CLASS_NAMES),
+            'names': list(config.CLASS_NAMES.values())
+        }
+        train_check = config.IMAGES_TRAIN
+        val_check = config.IMAGES_VAL
+    
     # Check if directories exist
-    if not config.IMAGES_TRAIN.exists():
-        raise FileNotFoundError(f"Training images not found at: {config.IMAGES_TRAIN}")
-    if not config.IMAGES_VAL.exists():
-        raise FileNotFoundError(f"Validation images not found at: {config.IMAGES_VAL}")
+    if not train_check.exists():
+        raise FileNotFoundError(f"Training images not found at: {train_check}")
+    if not val_check.exists():
+        raise FileNotFoundError(f"Validation images not found at: {val_check}")
     
-    # Create data.yaml
-    data_yaml = {
-        'path': str(config.DATASET_ROOT.absolute()),
-        'train': 'train',  # Relative to 'path'
-        'val': 'val',
-        'test': 'test',
-        'nc': len(config.CLASS_NAMES),
-        'names': list(config.CLASS_NAMES.values())
-    }
-    
+    # Write data.yaml
     with open(yaml_path, 'w') as f:
         yaml.dump(data_yaml, f, default_flow_style=False, sort_keys=False)
     
-    print(f"✓ Dataset configured at: {config.DATASET_ROOT}")
     print(f"✓ data.yaml created at: {yaml_path}")
-    print(f"\nDataset structure:")
-    print(f"  Training images: {config.IMAGES_TRAIN}")
-    print(f"  Validation images: {config.IMAGES_VAL}")
-    print(f"  Test images: {config.IMAGES_TEST}")
-    print(f"\nClasses ({len(config.CLASS_NAMES)}): {list(config.CLASS_NAMES.values())}")
+    print(f"\nConfiguration:")
+    print(f"  Path: {data_yaml['path']}")
+    print(f"  Train: {data_yaml['train']}")
+    print(f"  Val: {data_yaml['val']}")
+    print(f"  Test: {data_yaml['test']}")
+    print(f"  Classes: {len(config.CLASS_NAMES)}")
+    print(f"  Names: {list(config.CLASS_NAMES.values())}")
     
     return yaml_path
 

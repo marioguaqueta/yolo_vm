@@ -1,0 +1,307 @@
+================================================================================
+ 📊 WANDB METRICS - QUICK REFERENCE
+================================================================================
+
+🎯 TOP 5 METRICS TO MONITOR (In Order of Importance)
+================================================================================
+
+1. metrics/mAP50(B)                    ⭐⭐⭐ MOST IMPORTANT
+   → Main success metric
+   → Target: > 60%
+   → Should increase steadily
+
+2. train/box_loss                      ⭐⭐⭐ 
+   → Shows learning progress
+   → Should decrease smoothly
+   → Target: < 1.0 at end
+
+3. metrics/precision(B) & recall(B)    ⭐⭐
+   → Both should be > 60%
+   → Balance is important
+   → precision = accuracy, recall = detection rate
+
+4. metrics/mAP50(B)_[Species]          ⭐⭐
+   → Per-class performance
+   → Identifies weak species
+   → Elephant/Kudu should be highest (~80%)
+
+5. system/gpu_mem                      ⭐
+   → Stability check
+   → Should stay 18-20 GB (your L40-24GB)
+   → Prevents OOM crashes
+
+================================================================================
+ 📈 ALL METRICS LOGGED (Automatic)
+================================================================================
+
+TRAINING LOSSES (Lower = Better):
+  train/box_loss         Bounding box localization loss
+  train/cls_loss         Classification loss
+  train/dfl_loss         Distribution Focal Loss
+  train/loss             Total loss (sum of above)
+
+VALIDATION METRICS (Higher = Better):
+  metrics/mAP50(B)       ★ mAP @ IoU 0.5 (MAIN METRIC)
+  metrics/mAP50-95(B)    mAP averaged over IoU 0.5-0.95
+  metrics/precision(B)   Precision (true positive rate)
+  metrics/recall(B)      Recall (detection rate)
+
+PER-CLASS mAP50 (Higher = Better):
+  metrics/mAP50(B)_Buffalo
+  metrics/mAP50(B)_Elephant      ← Expected: ~80% (best)
+  metrics/mAP50(B)_Kudu          ← Expected: ~77%
+  metrics/mAP50(B)_Topi
+  metrics/mAP50(B)_Warthog       ← Expected: ~29% (hardest)
+  metrics/mAP50(B)_Waterbuck     ← Expected: ~40%
+
+LEARNING RATE:
+  lr/pg0                 Learning rate parameter group 0
+  lr/pg1                 Learning rate parameter group 1
+  lr/pg2                 Learning rate parameter group 2
+
+SYSTEM METRICS:
+  train/epoch            Current epoch number
+  train/time             Time per epoch (seconds)
+  system/gpu_mem         GPU memory usage (GB)
+  system/gpu_util        GPU utilization (%)
+
+================================================================================
+ 🎯 EXPECTED VALUES AT DIFFERENT STAGES
+================================================================================
+
+EPOCH 10 (Early Training):
+  mAP50:           10-30%    (Learning basics)
+  box_loss:        1.5-2.0
+  cls_loss:        0.7-1.0
+  GPU mem:         18-20 GB
+
+EPOCH 25 (Mid Training):
+  mAP50:           40-50%    (Steady improvement)
+  box_loss:        1.0-1.5
+  cls_loss:        0.5-0.7
+  Best checkpoint: Usually saved around here
+
+EPOCH 50 (Final / Early Stop):
+  mAP50:           60-70%    ✅ TARGET
+  box_loss:        0.5-1.0
+  cls_loss:        0.4-0.5
+  Elephant mAP50:  ~80%      ✅
+  Kudu mAP50:      ~77%      ✅
+  Buffalo mAP50:   ~65%      ✅
+  Waterbuck mAP50: ~40%
+  Warthog mAP50:   ~29%      (Difficult - few samples)
+
+================================================================================
+ ✅ SUCCESS CRITERIA
+================================================================================
+
+GOOD TRAINING RUN:
+  ✓ mAP50 > 60%
+  ✓ All losses decreasing smoothly
+  ✓ No class with mAP50 = 0%
+  ✓ Precision and recall balanced (both > 60%)
+  ✓ GPU memory stable (18-20 GB)
+  ✓ No NaN or inf values
+
+NEEDS IMPROVEMENT:
+  ⚠ mAP50 < 50% after 50 epochs
+  ⚠ High precision, low recall (too conservative)
+  ⚠ Low precision, high recall (too many false positives)
+  ⚠ One or more classes < 10% mAP
+
+TRAINING ISSUES:
+  ❌ Losses increasing or oscillating
+  ❌ mAP50 stuck at 0-10%
+  ❌ GPU memory growing continuously
+  ❌ NaN or inf losses
+  ❌ Training crashes
+
+================================================================================
+ 📊 WANDB DASHBOARD PANELS
+================================================================================
+
+MAIN PANELS TO CREATE:
+
+1. TRAINING PROGRESS
+   - metrics/mAP50(B) vs epoch          ← Most important!
+   - metrics/precision(B) vs epoch
+   - metrics/recall(B) vs epoch
+
+2. LOSSES
+   - train/box_loss vs epoch
+   - train/cls_loss vs epoch
+   - train/dfl_loss vs epoch
+   - train/loss vs epoch
+
+3. PER-CLASS PERFORMANCE
+   - Bar chart: All mAP50(B)_[species]
+   - Shows best/worst performing species
+
+4. SYSTEM MONITORING
+   - system/gpu_mem vs epoch
+   - system/gpu_util vs epoch
+   - train/time vs epoch
+
+================================================================================
+ 🔍 WHAT TO CHECK DURING TRAINING
+================================================================================
+
+EVERY 5 EPOCHS:
+  □ mAP50 increasing?
+  □ box_loss decreasing?
+  □ GPU memory stable?
+  □ Time per epoch consistent?
+
+AT EPOCH 25 (HALFWAY):
+  □ mAP50 > 40%? (On track for 60%+)
+  □ All classes being detected? (No 0% classes)
+  □ Losses still decreasing? (Not plateaued)
+
+AT EPOCH 50 (END):
+  □ mAP50 > 60%? (Success!)
+  □ Elephant + Kudu > 70%? (Best performers)
+  □ All losses < 1.0? (Converged)
+  □ Check per-class chart for weaknesses
+
+================================================================================
+ 🔔 RECOMMENDED ALERTS
+================================================================================
+
+Set up in Wandb dashboard:
+
+1. metrics/mAP50(B) > 0.65           Email when target reached
+2. Run finishes                      Notification
+3. Run fails                         Immediate alert
+4. system/gpu_mem > 22 GB            Memory warning
+5. metrics/mAP50(B) plateau > 10 ep  Not improving
+
+================================================================================
+ 📱 MONITORING OPTIONS
+================================================================================
+
+1. WANDB WEB DASHBOARD
+   URL: https://wandb.ai/your-username/yolov11-wildlife-detection
+   → Real-time charts
+   → Full metrics history
+   → Image predictions
+   → Model artifacts
+
+2. WANDB MOBILE APP
+   → Install on phone (iOS/Android)
+   → Get push notifications
+   → Quick metrics check
+   → Training status
+
+3. TERMINAL OUTPUT
+   → Shows current epoch metrics
+   → GPU memory usage
+   → Time per epoch
+   → ETA to completion
+
+4. LOCAL FILES
+   → runs/yolov11_wildlife/results.csv
+   → Contains all metrics
+   → Can import to Excel/Python
+
+================================================================================
+ 📊 EXPORT METRICS
+================================================================================
+
+FROM WANDB DASHBOARD:
+  → Run page → Overview → Export data → CSV
+  → Downloads all metrics as CSV file
+
+FROM PYTHON:
+  import wandb
+  api = wandb.Api()
+  run = api.run("user/project/run-id")
+  df = run.history()
+  df.to_csv('metrics.csv')
+
+FROM LOCAL FILE:
+  cd runs/yolov11_wildlife/
+  cat results.csv
+
+================================================================================
+ 🎓 METRIC DEFINITIONS
+================================================================================
+
+mAP50:
+  Mean Average Precision at IoU 0.5
+  → Main object detection metric
+  → 50% overlap = correct detection
+  → Higher = better
+  → Wildlife target: 60%+
+
+Precision:
+  True Positives / (True Positives + False Positives)
+  → Of all detections, how many are correct?
+  → High precision = few false alarms
+  → Target: 70%+
+
+Recall:
+  True Positives / (True Positives + False Negatives)
+  → Of all animals, how many are detected?
+  → High recall = few missed animals
+  → Target: 60%+
+
+Box Loss:
+  Localization error
+  → How accurate are bounding boxes?
+  → Lower = more precise boxes
+  → Target: < 1.0
+
+Class Loss:
+  Classification error
+  → How accurate are species IDs?
+  → Lower = better species recognition
+  → Target: < 0.5
+
+================================================================================
+ 💡 TIPS
+================================================================================
+
+1. Focus on mAP50 as your primary metric
+2. Check per-class metrics to identify weak species
+3. Balance precision and recall (don't optimize just one)
+4. GPU memory should be stable throughout training
+5. Losses should decrease smoothly (no wild oscillations)
+6. Early stopping usually happens around epoch 40-45
+7. Best model often found around epoch 20-30
+8. Compare multiple runs in wandb to find best settings
+9. Download confusion matrix at end to see class confusions
+10. Use wandb for experiment tracking across different configs
+
+================================================================================
+ 🚀 QUICK ACCESS
+================================================================================
+
+START TRAINING:
+  python train_vm.py --epochs 50 --batch 4
+
+VIEW DASHBOARD:
+  → Link printed at training start
+  → https://wandb.ai/your-username/yolov11-wildlife-detection
+
+KEY COMMAND DURING TRAINING:
+  → Keep wandb dashboard open in browser
+  → Refresh to see latest metrics
+  → Charts update automatically
+
+================================================================================
+ 📞 NEED HELP?
+================================================================================
+
+Complete guide:      WANDB_METRICS_GUIDE.md
+General training:    README_TRAINING.md
+VM setup:            VM_SETUP_GUIDE.txt
+GPU issues:          GPU_MEMORY_GUIDE.md
+
+================================================================================
+
+🎯 REMEMBER: All metrics are AUTOMATIC!
+   Just train and watch the wandb dashboard.
+   No extra code needed! ✨
+
+================================================================================
+

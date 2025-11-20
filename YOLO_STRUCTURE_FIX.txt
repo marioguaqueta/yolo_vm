@@ -1,0 +1,273 @@
+================================================================================
+ 📁 YOLO DATASET STRUCTURE - FIX
+================================================================================
+
+PROBLEM: Dataset structure doesn't match YOLO standard
+
+================================================================================
+ 🎯 SOLUTION (Run reorganization script)
+================================================================================
+
+python reorganize_to_yolo_structure.py
+
+This will reorganize your dataset to the standard YOLO structure.
+
+================================================================================
+ 📁 CURRENT STRUCTURE (After convert_csv_to_yolo.py)
+================================================================================
+
+general_dataset/
+├── train/
+│   ├── image1.JPG           ← Images here
+│   ├── image2.JPG
+│   └── labels/              ← Labels in subfolder
+│       ├── image1.txt
+│       └── image2.txt
+├── val/
+│   ├── image.JPG
+│   └── labels/
+│       └── image.txt
+└── test/
+    ├── image.JPG
+    └── labels/
+        └── image.txt
+
+ISSUE: Images and labels mixed in same parent directory ❌
+
+================================================================================
+ ✅ YOLO STANDARD STRUCTURE (What we need)
+================================================================================
+
+general_dataset/
+├── images/                  ← All images here
+│   ├── train/
+│   │   ├── image1.JPG
+│   │   └── image2.JPG
+│   ├── val/
+│   │   └── image.JPG
+│   └── test/
+│       └── image.JPG
+└── labels/                  ← All labels here
+    ├── train/
+    │   ├── image1.txt
+    │   └── image2.txt
+    ├── val/
+    │   └── image.txt
+    └── test/
+        └── image.txt
+
+BENEFIT: Clean separation of images and labels ✅
+
+================================================================================
+ 🔧 REORGANIZATION STEPS
+================================================================================
+
+STEP 1: Run the reorganization script
+  cd /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm
+  python reorganize_to_yolo_structure.py
+
+STEP 2: Confirm when prompted
+  Proceed with reorganization? (y/N): y
+
+STEP 3: Verify new structure
+  ls -la ../general_dataset/images/
+  ls -la ../general_dataset/labels/
+
+STEP 4: Train (train_vm.py auto-detects the structure)
+  python train_vm.py --epochs 50 --batch 4
+
+================================================================================
+ 🎯 WHAT THE SCRIPT DOES
+================================================================================
+
+1. Creates new directories:
+   - general_dataset/images/train/
+   - general_dataset/images/val/
+   - general_dataset/images/test/
+   - general_dataset/labels/train/
+   - general_dataset/labels/val/
+   - general_dataset/labels/test/
+
+2. Moves all .JPG files:
+   FROM: general_dataset/train/*.JPG
+   TO:   general_dataset/images/train/*.JPG
+
+3. Moves all .txt label files:
+   FROM: general_dataset/train/labels/*.txt
+   TO:   general_dataset/labels/train/*.txt
+
+4. Cleans up:
+   - Removes empty old directories
+   - Preserves groundtruth/csv/ (unchanged)
+
+5. Reports:
+   - Number of images moved
+   - Number of labels moved
+   - Final structure summary
+
+================================================================================
+ ⚠️  IMPORTANT NOTES
+================================================================================
+
+1. SAFE OPERATION
+   - Files are MOVED (not copied)
+   - No data loss
+   - Can be done while dataset is on disk
+   - Preserves original CSV files
+
+2. ONE-TIME OPERATION
+   - Only need to run once
+   - Script detects if already reorganized
+   - Won't reorganize twice
+
+3. BACKWARDS COMPATIBLE
+   - train_vm.py detects both structures
+   - Old structure still works (with warning)
+   - New structure is preferred
+
+4. NO RE-CONVERSION NEEDED
+   - Labels already created by convert_csv_to_yolo.py
+   - Just reorganizing existing files
+   - No data processing needed
+
+================================================================================
+ 🔍 VERIFICATION
+================================================================================
+
+BEFORE reorganization:
+  ls general_dataset/
+  # Shows: train/ val/ test/ groundtruth/
+
+AFTER reorganization:
+  ls general_dataset/
+  # Shows: images/ labels/ groundtruth/
+
+  ls general_dataset/images/
+  # Shows: train/ val/ test/
+
+  ls general_dataset/labels/
+  # Shows: train/ val/ test/
+
+Count files:
+  echo "Train images: $(ls general_dataset/images/train/*.JPG | wc -l)"
+  echo "Train labels: $(ls general_dataset/labels/train/*.txt | wc -l)"
+  # Should match (e.g., 928 images, 928 labels)
+
+================================================================================
+ 🚀 COMPLETE WORKFLOW
+================================================================================
+
+FROM SCRATCH (full setup):
+
+1. Convert CSV to YOLO labels:
+   python convert_csv_to_yolo.py
+
+2. Reorganize to YOLO structure:
+   python reorganize_to_yolo_structure.py
+
+3. Train:
+   python train_vm.py --epochs 50 --batch 4
+
+================================================================================
+ 📊 FILE COUNTS (Expected)
+================================================================================
+
+After reorganization:
+
+images/train/    928 .JPG files
+labels/train/    928 .txt files
+
+images/val/      111 .JPG files
+labels/val/      111 .txt files
+
+images/test/     258 .JPG files
+labels/test/     258 .txt files
+
+Total:           1297 images, 1297 label files
+
+================================================================================
+ 🐛 TROUBLESHOOTING
+================================================================================
+
+ISSUE: "Dataset not found"
+FIX: Check you're in the right directory
+  cd /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm
+  ls ../general_dataset/
+
+ISSUE: "Already reorganized"
+FIX: Good! Skip this step, proceed to training
+  python train_vm.py --epochs 50 --batch 4
+
+ISSUE: "Images not found"
+FIX: Make sure convert_csv_to_yolo.py was run first
+  ls ../general_dataset/train/*.JPG
+  # Should show images
+
+ISSUE: "Labels not found"
+FIX: Run conversion first
+  python convert_csv_to_yolo.py
+  # Then reorganize
+
+================================================================================
+ 💡 WHY THIS STRUCTURE?
+================================================================================
+
+YOLO STANDARD BENEFITS:
+
+1. CLEANER ORGANIZATION
+   - Images and labels clearly separated
+   - Easier to manage large datasets
+
+2. BETTER FOR TOOLS
+   - Standard YOLO tools expect this
+   - Easier data augmentation
+   - Better for visualization tools
+
+3. EASIER SHARING
+   - Can share images separately from labels
+   - Standard structure others recognize
+
+4. MULTIPLE LABEL SETS
+   - Can have multiple label directories
+   - e.g., labels/, labels_v2/, labels_improved/
+   - Useful for experiments
+
+================================================================================
+ 📋 QUICK REFERENCE
+================================================================================
+
+REORGANIZE:
+  python reorganize_to_yolo_structure.py
+
+CHECK STRUCTURE:
+  ls -la ../general_dataset/images/
+  ls -la ../general_dataset/labels/
+
+TRAIN (auto-detects structure):
+  python train_vm.py --epochs 50 --batch 4
+
+================================================================================
+ ✅ UPDATED train_vm.py
+================================================================================
+
+The script now AUTO-DETECTS which structure you have:
+
+STANDARD STRUCTURE (images/ and labels/ exist):
+  ✓ Uses: images/train, images/val, images/test
+  ✓ Expects labels in: labels/train, labels/val, labels/test
+
+LEGACY STRUCTURE (train/, val/, test/ with mixed content):
+  ⚠ Uses: train, val, test
+  ⚠ Shows warning to reorganize
+  ⚠ Still works but not optimal
+
+================================================================================
+
+🚀 QUICK START:
+
+cd /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm
+python reorganize_to_yolo_structure.py
+python train_vm.py --epochs 50 --batch 4
+
+================================================================================
+
