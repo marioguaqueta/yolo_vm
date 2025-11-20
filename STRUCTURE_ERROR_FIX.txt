@@ -1,0 +1,175 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║  FIX: "Training images not found" Error After Reorganization         ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+PROBLEM:
+  After running reorganize_to_yolo_structure.py, you get:
+  "ERROR: Training images not found at .../general_dataset/train"
+
+CAUSE:
+  1. Images were moved from general_dataset/train/ to general_dataset/images/train/
+  2. But train_vm.py was still configured with old paths
+  3. Plus manual edits made things worse:
+     - CLASS_NAMES using 1-6 instead of 0-5 (YOLO needs 0-indexed)
+     - MODEL using yolo11x-obb.pt instead of yolo11s.pt (wrong model type)
+
+WHAT WAS FIXED:
+  ✓ Updated Config class paths to standard YOLO structure:
+    - IMAGES_TRAIN = DATASET_ROOT / "images" / "train"  (was: "train")
+    - IMAGES_VAL   = DATASET_ROOT / "images" / "val"    (was: "val")
+    - IMAGES_TEST  = DATASET_ROOT / "images" / "test"   (was: "test")
+    
+  ✓ Added LABELS paths:
+    - LABELS_TRAIN = DATASET_ROOT / "labels" / "train"
+    - LABELS_VAL   = DATASET_ROOT / "labels" / "val"
+    - LABELS_TEST  = DATASET_ROOT / "labels" / "test"
+  
+  ✓ Fixed CLASS_NAMES (now 0-indexed as required by YOLO):
+    - 0: "Buffalo"   (was: 1: "Buffalo")
+    - 1: "Elephant"  (was: 2: "Elephant")
+    - ... etc.
+  
+  ✓ Fixed MODEL:
+    - yolo11s.pt (correct for regular bounding boxes)
+    - Was: yolo11x-obb.pt (for oriented bounding boxes - WRONG!)
+  
+  ✓ Added better error messages with clear solutions
+  ✓ Added dataset statistics display (image/label counts)
+  ✓ Simplified create_data_yaml() - no more legacy structure fallback
+
+═══════════════════════════════════════════════════════════════════════
+
+COMPLETE WORKFLOW (From VM):
+
+cd /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm
+
+# Step 1: Convert CSV annotations to YOLO format
+python convert_csv_to_yolo.py
+# Creates .txt label files for each image
+
+# Step 2: Reorganize to standard YOLO structure
+python reorganize_to_yolo_structure.py
+# Moves images to images/train/, labels to labels/train/
+
+# Step 3: Train (now with fixed paths!)
+python train_vm.py --epochs 50 --batch 4
+# Will automatically find images and labels in correct locations
+
+═══════════════════════════════════════════════════════════════════════
+
+VERIFY STRUCTURE:
+
+# Check directories exist
+ls -la ../general_dataset/
+# Should show: images/ labels/ groundtruth/
+
+ls -la ../general_dataset/images/
+# Should show: train/ val/ test/
+
+ls -la ../general_dataset/labels/
+# Should show: train/ val/ test/
+
+# Count files (should match)
+ls ../general_dataset/images/train/*.JPG | wc -l
+# Expected: 928
+
+ls ../general_dataset/labels/train/*.txt | wc -l
+# Expected: 928 (same as images)
+
+═══════════════════════════════════════════════════════════════════════
+
+FINAL STRUCTURE:
+
+/home/estudiante/grupo_12/subsaharian_dataset/
+├── yolo_vm/                    ← Your code directory
+│   ├── train_vm.py             ← Fixed! Now uses correct paths
+│   ├── convert_csv_to_yolo.py
+│   └── reorganize_to_yolo_structure.py
+└── general_dataset/            ← Your data directory
+    ├── images/                 ← All images here
+    │   ├── train/              (928 .JPG files)
+    │   ├── val/                (111 .JPG files)
+    │   └── test/               (258 .JPG files)
+    ├── labels/                 ← All labels here
+    │   ├── train/              (928 .txt files)
+    │   ├── val/                (111 .txt files)
+    │   └── test/               (258 .txt files)
+    └── groundtruth/
+        └── csv/                ← Original CSV files
+            ├── train_big_size_A_B_E_K_WH_WB.csv
+            ├── val_big_size_A_B_E_K_WH_WB.csv
+            └── test_big_size_A_B_E_K_WH_WB.csv
+
+═══════════════════════════════════════════════════════════════════════
+
+KEY POINTS:
+
+1. YOLO CLASS IDs MUST START AT 0 (not 1!)
+   - 0: Buffalo
+   - 1: Elephant
+   - 2: Kudu
+   - 3: Topi
+   - 4: Warthog
+   - 5: Waterbuck
+
+2. USE CORRECT MODEL TYPE:
+   - yolo11s.pt, yolo11m.pt, yolo11l.pt, yolo11x.pt
+     → For regular bounding boxes (your case)
+   
+   - yolo11s-obb.pt, yolo11m-obb.pt, etc.
+     → For oriented bounding boxes (NOT your case)
+
+3. STANDARD YOLO STRUCTURE:
+   dataset/
+   ├── images/
+   │   ├── train/
+   │   ├── val/
+   │   └── test/
+   └── labels/
+       ├── train/
+       ├── val/
+       └── test/
+
+═══════════════════════════════════════════════════════════════════════
+
+TRAINING COMMAND:
+
+# Basic
+python train_vm.py
+
+# With options
+python train_vm.py --epochs 50 --batch 4 --imgsz 2048
+
+# Without wandb
+python train_vm.py --no-wandb --epochs 50
+
+# With wandb API key
+python train_vm.py --wandb-key YOUR_KEY_HERE --epochs 50
+
+═══════════════════════════════════════════════════════════════════════
+
+TROUBLESHOOTING:
+
+Error: "Training images not found"
+→ Make sure you ran reorganize_to_yolo_structure.py first
+→ Check that images/ directory exists in general_dataset/
+
+Error: "Training labels not found"
+→ Make sure you ran convert_csv_to_yolo.py first
+→ Then run reorganize_to_yolo_structure.py
+→ Check that labels/ directory exists in general_dataset/
+
+Error: "Mismatch between images and labels"
+→ Some images don't have corresponding label files
+→ Check convert_csv_to_yolo.py output for warnings
+→ Verify CSV files have all image names
+
+═══════════════════════════════════════════════════════════════════════
+
+STATUS: ✅ FIXED!
+
+Your train_vm.py is now configured correctly for the standard YOLO structure.
+Just make sure you've run the conversion and reorganization scripts first!
+
+═══════════════════════════════════════════════════════════════════════
+

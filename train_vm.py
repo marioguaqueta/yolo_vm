@@ -32,31 +32,41 @@ class Config:
     # For Universidad de los Andes VM:
     # /home/estudiantes/grupo_12/sahariandataset/
     #   ├── yolo_vm/          <- Code here (this script)
-    #   └── general_dataset/  <- Data here
-    #       ├── train/        <- Training images
-    #       ├── val/          <- Validation images
-    #       └── test/         <- Test images
+    #   └── general_dataset/  <- Data here (YOLO standard structure)
+    #       ├── images/
+    #       │   ├── train/    <- Training images (.JPG)
+    #       │   ├── val/      <- Validation images
+    #       │   └── test/     <- Test images
+    #       └── labels/
+    #           ├── train/    <- Training labels (.txt)
+    #           ├── val/      <- Validation labels
+    #           └── test/     <- Test labels
     
-    # Dataset paths
-    IMAGES_TRAIN = DATASET_ROOT / "train"
+    # Dataset paths - Standard YOLO structure
+    IMAGES_TRAIN = DATASET_ROOT / "images" / "train"
     print(f"IMAGES_TRAIN: {IMAGES_TRAIN}")
-    IMAGES_VAL = DATASET_ROOT / "val"
+    IMAGES_VAL = DATASET_ROOT / "images" / "val"
     print(f"IMAGES_VAL: {IMAGES_VAL}")
-    IMAGES_TEST = DATASET_ROOT / "test"
+    IMAGES_TEST = DATASET_ROOT / "images" / "test"
     print(f"IMAGES_TEST: {IMAGES_TEST}")
     
-    # Class mapping
+    # Labels paths
+    LABELS_TRAIN = DATASET_ROOT / "labels" / "train"
+    LABELS_VAL = DATASET_ROOT / "labels" / "val"
+    LABELS_TEST = DATASET_ROOT / "labels" / "test"
+    
+    # Class mapping (MUST be 0-indexed for YOLO)
     CLASS_NAMES = {
-        1: "Buffalo",
-        2: "Elephant", 
-        3: "Kudu",
-        4: "Topi",
-        5: "Warthog",
-        6: "Waterbuck"
+        0: "Buffalo",
+        1: "Elephant", 
+        2: "Kudu",
+        3: "Topi",
+        4: "Warthog",
+        5: "Waterbuck"
     }
     
     # Training hyperparameters
-    MODEL = "yolo11x-obb.pt"  # Starting model
+    MODEL = "yolo11s.pt"  # Starting model (use yolo11s/m/l/x.pt for regular bounding boxes)
     EPOCHS = 50
     BATCH_SIZE = 4 if torch.cuda.is_available() else 2  # Reduced for 2048px images
     IMG_SIZE = 2048  # High resolution for aerial images
@@ -110,7 +120,7 @@ def print_system_info():
 # ============================================================================
 
 def create_data_yaml(config):
-    """Create or verify data.yaml configuration"""
+    """Create data.yaml configuration for YOLO standard structure"""
     print("\n" + "="*70)
     print("CONFIGURING DATASET")
     print("="*70)
@@ -118,43 +128,16 @@ def create_data_yaml(config):
     # Create data.yaml in dataset root
     yaml_path = config.DATASET_ROOT / 'data.yaml'
     
-    # Check for YOLO standard structure (images/ and labels/ directories)
-    images_dir = config.DATASET_ROOT / "images"
-    labels_dir = config.DATASET_ROOT / "labels"
-    
-    if images_dir.exists() and labels_dir.exists():
-        # Standard YOLO structure
-        print("✓ Detected standard YOLO structure")
-        data_yaml = {
-            'path': str(config.DATASET_ROOT.absolute()),
-            'train': 'images/train',  # Relative to 'path'
-            'val': 'images/val',
-            'test': 'images/test',
-            'nc': len(config.CLASS_NAMES),
-            'names': list(config.CLASS_NAMES.values())
-        }
-        train_check = images_dir / "train"
-        val_check = images_dir / "val"
-    else:
-        # Old structure (images directly in train/val/test)
-        print("⚠ Using legacy structure (not standard YOLO)")
-        print("  Consider running: python reorganize_to_yolo_structure.py")
-        data_yaml = {
-            'path': str(config.DATASET_ROOT.absolute()),
-            'train': 'train',  # Relative to 'path'
-            'val': 'val',
-            'test': 'test',
-            'nc': len(config.CLASS_NAMES),
-            'names': list(config.CLASS_NAMES.values())
-        }
-        train_check = config.IMAGES_TRAIN
-        val_check = config.IMAGES_VAL
-    
-    # Check if directories exist
-    if not train_check.exists():
-        raise FileNotFoundError(f"Training images not found at: {train_check}")
-    if not val_check.exists():
-        raise FileNotFoundError(f"Validation images not found at: {val_check}")
+    # YOLO standard structure
+    print("✓ Using standard YOLO structure")
+    data_yaml = {
+        'path': str(config.DATASET_ROOT.absolute()),
+        'train': 'images/train',  # Relative to 'path'
+        'val': 'images/val',
+        'test': 'images/test',
+        'nc': len(config.CLASS_NAMES),
+        'names': list(config.CLASS_NAMES.values())
+    }
     
     # Write data.yaml
     with open(yaml_path, 'w') as f:
@@ -168,6 +151,23 @@ def create_data_yaml(config):
     print(f"  Test: {data_yaml['test']}")
     print(f"  Classes: {len(config.CLASS_NAMES)}")
     print(f"  Names: {list(config.CLASS_NAMES.values())}")
+    
+    # Count files for verification
+    train_images = list(config.IMAGES_TRAIN.glob('*.JPG')) + list(config.IMAGES_TRAIN.glob('*.jpg'))
+    val_images = list(config.IMAGES_VAL.glob('*.JPG')) + list(config.IMAGES_VAL.glob('*.jpg'))
+    train_labels = list(config.LABELS_TRAIN.glob('*.txt'))
+    val_labels = list(config.LABELS_VAL.glob('*.txt'))
+    
+    print(f"\nDataset Statistics:")
+    print(f"  Training images: {len(train_images)}")
+    print(f"  Training labels: {len(train_labels)}")
+    print(f"  Validation images: {len(val_images)}")
+    print(f"  Validation labels: {len(val_labels)}")
+    
+    if len(train_images) != len(train_labels):
+        print(f"  ⚠ WARNING: Mismatch between images and labels in training set")
+    if len(val_images) != len(val_labels):
+        print(f"  ⚠ WARNING: Mismatch between images and labels in validation set")
     
     return yaml_path
 
@@ -391,8 +391,31 @@ def main():
         print(f"   └── general_dataset/  (data)")
         return 1
     
+    # Check for YOLO standard structure
     if not config.IMAGES_TRAIN.exists():
         print(f"\n❌ ERROR: Training images not found at {config.IMAGES_TRAIN}")
+        print(f"   This script expects YOLO standard structure:")
+        print(f"   {config.DATASET_ROOT}/")
+        print(f"   ├── images/")
+        print(f"   │   ├── train/")
+        print(f"   │   ├── val/")
+        print(f"   │   └── test/")
+        print(f"   └── labels/")
+        print(f"       ├── train/")
+        print(f"       ├── val/")
+        print(f"       └── test/")
+        print(f"\n   SOLUTION:")
+        print(f"   1. First run: python convert_csv_to_yolo.py")
+        print(f"   2. Then run:  python reorganize_to_yolo_structure.py")
+        print(f"   3. Then run:  python train_vm.py")
+        return 1
+    
+    if not config.LABELS_TRAIN.exists():
+        print(f"\n❌ ERROR: Training labels not found at {config.LABELS_TRAIN}")
+        print(f"   SOLUTION:")
+        print(f"   1. First run: python convert_csv_to_yolo.py")
+        print(f"   2. Then run:  python reorganize_to_yolo_structure.py")
+        print(f"   3. Then run:  python train_vm.py")
         return 1
     
     # Create data.yaml

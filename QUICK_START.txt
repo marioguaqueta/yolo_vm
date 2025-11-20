@@ -1,0 +1,206 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║           YOLOv11 Wildlife Detection - QUICK START GUIDE              ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+┌───────────────────────────────────────────────────────────────────────┐
+│  1️⃣  SETUP ENVIRONMENT (First time only)                              │
+└───────────────────────────────────────────────────────────────────────┘
+
+cd /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm
+
+# Create environment
+conda env create -f environment.yml
+
+# Activate
+conda activate yolov11-wildlife
+
+# Login to wandb
+wandb login
+
+┌───────────────────────────────────────────────────────────────────────┐
+│  2️⃣  PREPARE DATA (First time only)                                   │
+└───────────────────────────────────────────────────────────────────────┘
+
+# Convert CSV to YOLO format
+python convert_csv_to_yolo.py
+
+# Reorganize to standard structure
+python reorganize_to_yolo_structure.py
+
+# Verify structure
+ls -la ../general_dataset/
+# Should show: images/ labels/ groundtruth/
+
+┌───────────────────────────────────────────────────────────────────────┐
+│  3️⃣  TRAIN                                                            │
+└───────────────────────────────────────────────────────────────────────┘
+
+# Basic (default: 50 epochs, batch 4, 2048px)
+python train_vm.py
+
+# Custom settings
+python train_vm.py --epochs 50 --batch 4 --imgsz 2048
+
+# Without wandb
+python train_vm.py --no-wandb --epochs 50
+
+# With wandb key
+python train_vm.py --wandb-key YOUR_KEY --epochs 50
+
+# In background
+nohup python train_vm.py --epochs 50 > training.log 2>&1 &
+tail -f training.log  # View logs
+
+═══════════════════════════════════════════════════════════════════════
+
+🔥 QUICK FIXES FOR COMMON ERRORS
+
+ERROR: "Training images not found"
+→ python reorganize_to_yolo_structure.py
+
+ERROR: "Training labels not found"
+→ python convert_csv_to_yolo.py
+→ python reorganize_to_yolo_structure.py
+
+ERROR: "CUDA out of memory"
+→ python train_vm.py --batch 2
+→ OR python train_vm.py --imgsz 1024
+
+ERROR: "No space left on device"
+→ conda clean --all -y
+→ pip cache purge
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 MONITORING
+
+# GPU status
+nvidia-smi
+watch -n 1 nvidia-smi
+
+# Wandb dashboard
+Check URL printed after "✓ Wandb initialized"
+
+# Local results
+cd runs/yolov11_wildlife/
+ls weights/  # best.pt and last.pt
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ VERIFICATION CHECKLIST
+
+Before training:
+□ Environment activated (conda activate yolov11-wildlife)
+□ In correct directory (yolo_vm/)
+□ Images exist: ls ../general_dataset/images/train/*.JPG | wc -l
+  Expected: 928
+□ Labels exist: ls ../general_dataset/labels/train/*.txt | wc -l
+  Expected: 928
+□ GPU available: nvidia-smi
+□ Wandb ready: wandb login
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 TRAINING OPTIONS
+
+--epochs N      Number of training epochs (default: 50)
+--batch N       Batch size (default: 4)
+--imgsz N       Image size in pixels (default: 2048)
+--no-wandb      Disable wandb logging
+--wandb-key K   Wandb API key
+
+═══════════════════════════════════════════════════════════════════════
+
+📈 TARGET METRICS
+
+After training, check:
+- mAP50: > 0.5 (good), > 0.7 (excellent)
+- mAP50-95: > 0.3 (good), > 0.5 (excellent)
+- Precision: > 0.6 (good), > 0.8 (excellent)
+- Recall: > 0.5 (good), > 0.7 (excellent)
+
+═══════════════════════════════════════════════════════════════════════
+
+📁 DIRECTORY STRUCTURE
+
+Must look like this after Step 2:
+
+general_dataset/
+├── images/
+│   ├── train/    (928 .JPG files)
+│   ├── val/      (111 .JPG files)
+│   └── test/     (258 .JPG files)
+└── labels/
+    ├── train/    (928 .txt files)
+    ├── val/      (111 .txt files)
+    └── test/     (258 .txt files)
+
+═══════════════════════════════════════════════════════════════════════
+
+💾 OUTPUT FILES
+
+After training:
+runs/yolov11_wildlife/
+├── weights/
+│   ├── best.pt           ← Use this for inference! ⭐
+│   └── last.pt
+├── results.png           ← Training curves
+├── confusion_matrix.png
+└── val_batch*_pred.jpg   ← Validation predictions
+
+═══════════════════════════════════════════════════════════════════════
+
+🐘 SPECIES (6 classes)
+
+0: Buffalo
+1: Elephant
+2: Kudu
+3: Topi
+4: Warthog
+5: Waterbuck
+
+⚠️  Classes MUST be 0-indexed in YOLO!
+
+═══════════════════════════════════════════════════════════════════════
+
+🔄 TYPICAL WORKFLOW
+
+# First time setup
+conda env create -f environment.yml
+conda activate yolov11-wildlife
+wandb login
+python convert_csv_to_yolo.py
+python reorganize_to_yolo_structure.py
+
+# Every training session
+cd /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm
+conda activate yolov11-wildlife
+python train_vm.py --epochs 50
+
+# That's it! ✅
+
+═══════════════════════════════════════════════════════════════════════
+
+📚 MORE INFO
+
+See: COMPLETE_SETUP_GUIDE.md
+See: STRUCTURE_ERROR_FIX.txt
+See: GPU_MEMORY_GUIDE.md
+See: WANDB_METRICS_GUIDE.md
+
+═══════════════════════════════════════════════════════════════════════
+
+⏱️  ESTIMATED TIME
+
+Environment setup:     5 minutes
+Data preparation:      5-10 minutes
+Training (50 epochs):  4-8 hours (L40 GPU)
+Total:                 ~5-9 hours
+
+═══════════════════════════════════════════════════════════════════════
+
+Status: ✅ Ready to use!
+Last updated: 2025-11-20
+
+Happy training! 🚀🦁🐘
+
