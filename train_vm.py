@@ -53,11 +53,15 @@ class Config:
     # Training hyperparameters
     MODEL = "yolo11s.pt"  # Starting model
     EPOCHS = 50
-    BATCH_SIZE = 8 if torch.cuda.is_available() else 2
+    BATCH_SIZE = 4 if torch.cuda.is_available() else 2  # Reduced for 2048px images
     IMG_SIZE = 2048  # High resolution for aerial images
     PATIENCE = 10  # Early stopping patience
     WORKERS = 8  # Data loading workers
     SAVE_PERIOD = 5  # Save checkpoint every 5 epochs
+    
+    # Memory optimization
+    CACHE = False  # Don't cache images in RAM
+    RECT = False  # Don't use rectangular training (saves memory)
     
     # Device configuration
     if torch.cuda.is_available():
@@ -193,6 +197,11 @@ def train_model(config, yaml_path, use_wandb=True):
     print("STARTING YOLOV11 TRAINING")
     print("="*70)
     
+    # Clear GPU cache before training
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        print("✓ GPU cache cleared")
+    
     # Initialize model
     print(f"\nLoading model: {config.MODEL}")
     model = YOLO(config.MODEL)
@@ -218,6 +227,8 @@ def train_model(config, yaml_path, use_wandb=True):
         'save_period': config.SAVE_PERIOD,
         'workers': config.WORKERS,
         'amp': True,  # Automatic Mixed Precision
+        'cache': config.CACHE,  # Memory optimization
+        'rect': config.RECT,  # Memory optimization
         
         # Data augmentation
         'hsv_h': 0.015,
@@ -243,7 +254,15 @@ def train_model(config, yaml_path, use_wandb=True):
     print(f"  Workers: {config.WORKERS}")
     print(f"  Save period: Every {config.SAVE_PERIOD} epochs")
     print(f"  Mixed Precision: Enabled")
+    print(f"  Memory optimization: Cache={config.CACHE}, Rect={config.RECT}")
     print(f"  Wandb: {'Enabled' if use_wandb else 'Disabled'}")
+    
+    # Memory warning
+    if config.IMG_SIZE >= 2048 and config.BATCH_SIZE > 4:
+        print(f"\n⚠️  WARNING: Large image size ({config.IMG_SIZE}px) with batch size {config.BATCH_SIZE}")
+        print(f"   This may cause GPU memory issues. Consider:")
+        print(f"   - Reducing batch size: --batch 2 or --batch 4")
+        print(f"   - Reducing image size: --imgsz 1024")
     
     print(f"\n{'='*70}")
     print("TRAINING IN PROGRESS...")

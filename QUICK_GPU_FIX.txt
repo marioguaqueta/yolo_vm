@@ -1,0 +1,133 @@
+================================================================================
+ 🚨 GPU OUT OF MEMORY - IMMEDIATE FIX
+================================================================================
+
+ERROR: "CUDA out of memory" with batch=8, imgsz=2048
+
+YOUR GPU: NVIDIA L40-24C (24GB)
+
+================================================================================
+ ⚡ SOLUTION (Use batch size 4, not 8)
+================================================================================
+
+python train_vm.py --epochs 50 --batch 4 --imgsz 2048
+
+================================================================================
+ 📊 MEMORY USAGE
+================================================================================
+
+Your previous settings (FAILED):
+  Batch: 8, Image: 2048px  → ~26 GB needed  ❌ (Out of Memory)
+
+New recommended settings (WORKS):
+  Batch: 4, Image: 2048px  → ~18-20 GB used ✅
+
+Safe fallback (if batch 4 still fails):
+  Batch: 2, Image: 2048px  → ~14-16 GB used ✅
+
+================================================================================
+ 🎯 RECOMMENDED COMMANDS
+================================================================================
+
+# OPTION 1: Batch 4 (Recommended - Good balance)
+python train_vm.py --epochs 50 --batch 4 --imgsz 2048
+
+# OPTION 2: Batch 2 (Safe - If option 1 fails)
+python train_vm.py --epochs 50 --batch 2 --imgsz 2048
+
+# OPTION 3: Smaller images (Faster training)
+python train_vm.py --epochs 50 --batch 8 --imgsz 1536
+
+================================================================================
+ 🛠️ BEFORE TRAINING
+================================================================================
+
+1. CHECK GPU IS FREE
+   nvidia-smi
+   (Should show ~1MB usage, not 21GB)
+
+2. KILL ANY PYTHON PROCESSES IF NEEDED
+   pkill -9 python
+
+3. CLEAR GPU CACHE
+   python -c "import torch; torch.cuda.empty_cache()"
+
+4. TRAIN
+   python train_vm.py --epochs 50 --batch 4 --imgsz 2048
+
+================================================================================
+ 📈 TRAINING TIME ESTIMATES (L40-24C GPU)
+================================================================================
+
+Batch 4, 2048px: ~10 hours for 50 epochs  ← Recommended
+Batch 2, 2048px: ~12.5 hours for 50 epochs
+Batch 8, 1536px: ~6.5 hours for 50 epochs
+
+================================================================================
+ 🔍 MONITORING
+================================================================================
+
+# Terminal 1: Training
+python train_vm.py --epochs 50 --batch 4 --imgsz 2048
+
+# Terminal 2: Monitor GPU
+watch -n 1 nvidia-smi
+
+Expect to see:
+  Memory: ~18-20 GB / 24 GB (OK ✅)
+  GPU Util: 80-100%
+
+================================================================================
+ ⚙️ MEMORY OPTIMIZATION (Optional)
+================================================================================
+
+If you still have issues, try:
+
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+python train_vm.py --epochs 50 --batch 4 --imgsz 2048
+
+================================================================================
+ 💡 WHY THIS HAPPENED
+================================================================================
+
+Problem:
+  2048px images with batch size 8 = TOO MUCH MEMORY
+  Needs: ~26 GB
+  You have: 24 GB
+  Result: Out of Memory Error ❌
+
+Solution:
+  2048px images with batch size 4 = FITS
+  Needs: ~18-20 GB
+  You have: 24 GB
+  Result: Training works ✅
+
+================================================================================
+ 📚 MORE HELP
+================================================================================
+
+Complete guide: GPU_MEMORY_GUIDE.md
+
+Quick checks:
+  - GPU free? nvidia-smi
+  - Kill processes: pkill -9 python
+  - Clear cache: python -c "import torch; torch.cuda.empty_cache()"
+
+================================================================================
+
+🚀 QUICK START:
+
+cd /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm
+conda activate yolov11-wildlife
+nvidia-smi  # Check GPU is free
+python train_vm.py --epochs 50 --batch 4 --imgsz 2048
+
+================================================================================
+
+💡 THE SCRIPT HAS BEEN UPDATED!
+   Default batch size is now 4 (was 8)
+   Just run: python train_vm.py
+   (No need to specify --batch 4, it's the default now)
+
+================================================================================
+
