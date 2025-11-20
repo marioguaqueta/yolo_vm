@@ -57,12 +57,12 @@ class Config:
     
     # Class mapping (MUST be 0-indexed for YOLO)
     CLASS_NAMES = {
-        0: "Buffalo",
-        1: "Elephant", 
-        2: "Kudu",
-        3: "Topi",
-        4: "Warthog",
-        5: "Waterbuck"
+        1: "Buffalo",
+        2: "Elephant", 
+        3: "Kudu",
+        4: "Topi",
+        5: "Warthog",
+        6: "Waterbuck"
     }
     
     # Training hyperparameters
