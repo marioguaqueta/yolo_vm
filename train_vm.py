@@ -42,16 +42,16 @@ class Config:
     
     # Class mapping
     CLASS_NAMES = {
-        0: "Buffalo",
-        1: "Elephant", 
-        2: "Kudu",
-        3: "Topi",
-        4: "Warthog",
-        5: "Waterbuck"
+        1: "Buffalo",
+        2: "Elephant", 
+        3: "Kudu",
+        4: "Topi",
+        5: "Warthog",
+        6: "Waterbuck"
     }
     
     # Training hyperparameters
-    MODEL = "yolo11s.pt"  # Starting model
+    MODEL = "yolo11x-obb.pt"  # Starting model
     EPOCHS = 50
     BATCH_SIZE = 4 if torch.cuda.is_available() else 2  # Reduced for 2048px images
     IMG_SIZE = 2048  # High resolution for aerial images
