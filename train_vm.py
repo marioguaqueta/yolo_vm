@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 """
-YOLOv11 Wildlife Detection Training Script - VM/Cloud Optimized Version
+YOLOv11 Wildlife Detection Training Script - Simplified VM Version
 Project: Guacamaya - Microsoft AI for Good Lab
 Description: Train YOLOv11 model for aerial wildlife detection with wandb integration
-             Optimized for Google Colab, AWS, Azure, and other cloud environments
 """
 
 import os
 import yaml
-import pandas as pd
-import shutil
 from pathlib import Path
-from PIL import Image
 import wandb
 from ultralytics import YOLO
 import torch
@@ -20,45 +16,31 @@ import sys
 
 
 # ============================================================================
-# CONFIGURATION - CLOUD ENVIRONMENT
+# CONFIGURATION
 # ============================================================================
 
-class VMConfig:
-    """Training configuration for VM/Cloud environments"""
+class Config:
+    """Training configuration"""
     
-    # Detect environment
-    IS_COLAB = 'google.colab' in sys.modules
-    IS_KAGGLE = 'kaggle_secrets' in sys.modules
+    # Paths - Using relative paths
+    # Code structure: parent_dir/yolo_vm/ (code) and parent_dir/general_dataset/ (data)
+    BASE_DIR = Path(__file__).parent.absolute()  # yolo_vm directory
+    DATASET_ROOT = BASE_DIR.parent / "general_dataset"  # sibling directory
     
-    # ===== MODIFY THESE PATHS FOR YOUR ENVIRONMENT =====
-    if IS_COLAB:
-        # Google Colab with Google Drive
-        BASE_DIR = Path("/content/drive/MyDrive/MAIA_Final_Project_2025/yolo_vm")
-        DATASET_ROOT = BASE_DIR.parent / "general_dataset"
-    else:
-        # Generic cloud VM or local path
-        # Using relative paths: code in yolo_vm/, data in sibling general_dataset/
-        BASE_DIR = Path(__file__).parent.absolute()  # yolo_vm directory
-        DATASET_ROOT = BASE_DIR.parent / "general_dataset"  # sibling directory
-        
-        # For Universidad de los Andes VM, the structure is:
-        # /home/estudiantes/grupo_12/sahariandataset/
-        #   ├── yolo_vm/          <- Code here (this script)
-        #   └── general_dataset/  <- Data here
+    # For Universidad de los Andes VM:
+    # /home/estudiantes/grupo_12/sahariandataset/
+    #   ├── yolo_vm/          <- Code here (this script)
+    #   └── general_dataset/  <- Data here
+    #       ├── train/        <- Training images
+    #       ├── val/          <- Validation images
+    #       └── test/         <- Test images
     
-    # Dataset paths (relative to DATASET_ROOT)
+    # Dataset paths
     IMAGES_TRAIN = DATASET_ROOT / "train"
     IMAGES_VAL = DATASET_ROOT / "val"
     IMAGES_TEST = DATASET_ROOT / "test"
     
-    CSV_TRAIN = DATASET_ROOT / "groundtruth/csv/train_big_size_A_B_E_K_WH_WB.csv"
-    CSV_VAL = DATASET_ROOT / "groundtruth/csv/val_big_size_A_B_E_K_WH_WB.csv"
-    CSV_TEST = DATASET_ROOT / "groundtruth/csv/test_big_size_A_B_E_K_WH_WB.csv"
-    
-    # YOLO dataset output
-    YOLO_DATASET = BASE_DIR / "yolo_wildlife_dataset"
-    
-    # Class mapping (from CSV labels to class names)
+    # Class mapping
     CLASS_NAMES = {
         0: "Buffalo",
         1: "Elephant", 
@@ -68,18 +50,18 @@ class VMConfig:
         5: "Waterbuck"
     }
     
-    # Training hyperparameters - optimized for cloud GPU
+    # Training hyperparameters
     MODEL = "yolo11s.pt"  # Starting model
     EPOCHS = 50
-    BATCH_SIZE = 8 if torch.cuda.is_available() else 2  # Auto-adjust for GPU/CPU
+    BATCH_SIZE = 8 if torch.cuda.is_available() else 2
     IMG_SIZE = 2048  # High resolution for aerial images
     PATIENCE = 10  # Early stopping patience
     WORKERS = 8  # Data loading workers
+    SAVE_PERIOD = 5  # Save checkpoint every 5 epochs
     
     # Device configuration
     if torch.cuda.is_available():
         DEVICE = 0
-        # Optimize for GPU
         torch.backends.cudnn.benchmark = True
     else:
         DEVICE = "cpu"
@@ -88,224 +70,77 @@ class VMConfig:
     # Wandb configuration
     WANDB_PROJECT = "yolov11-wildlife-detection"
     WANDB_ENTITY = None  # Set to your wandb username if needed
-    WANDB_RUN_NAME = f"yolo11s-vm-{IMG_SIZE}px"
-    
-    # Save checkpoints more frequently on cloud
-    SAVE_PERIOD = 5  # Save every 5 epochs
+    WANDB_RUN_NAME = f"yolo11s-wildlife-{IMG_SIZE}px"
 
 
 def print_system_info():
-    """Print system information for debugging"""
+    """Print system information"""
     print("\n" + "="*70)
     print("SYSTEM INFORMATION")
     print("="*70)
     
-    # Python
-    print(f"Python: {sys.version}")
-    
-    # PyTorch
+    print(f"Python: {sys.version.split()[0]}")
     print(f"PyTorch: {torch.__version__}")
     
-    # GPU
     if torch.cuda.is_available():
         print(f"✓ GPU: {torch.cuda.get_device_name(0)}")
         print(f"  CUDA: {torch.version.cuda}")
         print(f"  GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
-        print(f"  GPU Count: {torch.cuda.device_count()}")
     else:
         print("⚠ GPU: Not available (CPU only)")
     
-    # Environment
-    if VMConfig.IS_COLAB:
-        print("Environment: Google Colab")
-    elif VMConfig.IS_KAGGLE:
-        print("Environment: Kaggle")
-    else:
-        print("Environment: Generic VM/Server")
-    
-    # Disk space
-    import shutil as sh
-    total, used, free = sh.disk_usage("/")
+    import shutil
+    total, used, free = shutil.disk_usage("/")
     print(f"Disk: {free / 1e9:.1f} GB free / {total / 1e9:.1f} GB total")
     
     print("="*70)
 
 
 # ============================================================================
-# DATA PREPARATION
+# DATA CONFIGURATION
 # ============================================================================
 
-def create_yolo_directories(config):
-    """Create YOLO dataset directory structure"""
-    print("\n" + "="*70)
-    print("CREATING YOLO DATASET STRUCTURE")
-    print("="*70)
-    
-    splits = ['train', 'val', 'test']
-    
-    for split in splits:
-        images_dir = config.YOLO_DATASET / split / 'images'
-        labels_dir = config.YOLO_DATASET / split / 'labels'
-        
-        images_dir.mkdir(parents=True, exist_ok=True)
-        labels_dir.mkdir(parents=True, exist_ok=True)
-        
-        print(f"✓ Created: {images_dir}")
-        print(f"✓ Created: {labels_dir}")
-    
-    print(f"\n✓ YOLO dataset structure created at: {config.YOLO_DATASET}")
-
-
-def csv_to_yolo_format(csv_path, images_dir, output_images_dir, output_labels_dir, config):
-    """
-    Convert CSV annotations to YOLO format
-    Includes progress bar for long conversions
-    """
-    print(f"\nProcessing: {csv_path.name}")
-    
-    if not csv_path.exists():
-        print(f"⚠ WARNING: CSV file not found: {csv_path}")
-        return 0, 0
-    
-    df = pd.read_csv(csv_path)
-    print(f"  Total annotations: {len(df)}")
-    
-    # Group by image
-    grouped = df.groupby('Image')
-    images_processed = 0
-    annotations_written = 0
-    
-    from tqdm import tqdm
-    
-    for image_name, group in tqdm(grouped, desc="Converting images", unit="img"):
-        image_path = images_dir / image_name
-        
-        if not image_path.exists():
-            # Try with different extensions
-            base_name = image_path.stem
-            found = False
-            for ext in ['.JPG', '.jpg', '.png', '.jpeg']:
-                alt_path = images_dir / f"{base_name}{ext}"
-                if alt_path.exists():
-                    image_path = alt_path
-                    image_name = alt_path.name
-                    found = True
-                    break
-            
-            if not found:
-                continue
-        
-        # Get image dimensions
-        try:
-            with Image.open(image_path) as img:
-                img_width, img_height = img.size
-        except Exception:
-            continue
-        
-        # Copy image to YOLO dataset
-        dest_image_path = output_images_dir / image_name
-        if not dest_image_path.exists():
-            shutil.copy(image_path, dest_image_path)
-        
-        # Create YOLO label file
-        label_file = output_labels_dir / f"{Path(image_name).stem}.txt"
-        
-        with open(label_file, 'w') as f:
-            for _, row in group.iterrows():
-                class_id = int(row['Label'])
-                x1, y1, x2, y2 = row['x1'], row['y1'], row['x2'], row['y2']
-                
-                # Convert to YOLO format
-                x_center = ((x1 + x2) / 2) / img_width
-                y_center = ((y1 + y2) / 2) / img_height
-                width = (x2 - x1) / img_width
-                height = (y2 - y1) / img_height
-                
-                # Clamp values
-                x_center = max(0, min(1, x_center))
-                y_center = max(0, min(1, y_center))
-                width = max(0, min(1, width))
-                height = max(0, min(1, height))
-                
-                f.write(f"{class_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}\n")
-                annotations_written += 1
-        
-        images_processed += 1
-    
-    print(f"  ✓ Images processed: {images_processed}")
-    print(f"  ✓ Annotations written: {annotations_written}")
-    
-    return images_processed, annotations_written
-
-
-def prepare_dataset(config):
-    """Prepare complete YOLO dataset from CSV annotations"""
-    print("\n" + "="*70)
-    print("CONVERTING CSV ANNOTATIONS TO YOLO FORMAT")
-    print("="*70)
-    
-    create_yolo_directories(config)
-    
-    total_images = 0
-    total_annotations = 0
-    
-    splits = [
-        ('train', config.CSV_TRAIN, config.IMAGES_TRAIN),
-        ('val', config.CSV_VAL, config.IMAGES_VAL),
-        ('test', config.CSV_TEST, config.IMAGES_TEST)
-    ]
-    
-    for split_name, csv_path, images_dir in splits:
-        output_images_dir = config.YOLO_DATASET / split_name / 'images'
-        output_labels_dir = config.YOLO_DATASET / split_name / 'labels'
-        
-        images, annotations = csv_to_yolo_format(
-            csv_path, images_dir, output_images_dir, output_labels_dir, config
-        )
-        
-        total_images += images
-        total_annotations += annotations
-    
-    print(f"\n" + "="*70)
-    print(f"DATASET CONVERSION COMPLETE")
-    print(f"  Total images: {total_images}")
-    print(f"  Total annotations: {total_annotations}")
-    print("="*70)
-    
-    return total_images > 0
-
-
 def create_data_yaml(config):
-    """Create YAML configuration file for YOLO training"""
+    """Create or verify data.yaml configuration"""
     print("\n" + "="*70)
-    print("CREATING DATA.YAML CONFIGURATION")
+    print("CONFIGURING DATASET")
     print("="*70)
     
+    # Create data.yaml in dataset root
+    yaml_path = config.DATASET_ROOT / 'data.yaml'
+    
+    # Check if directories exist
+    if not config.IMAGES_TRAIN.exists():
+        raise FileNotFoundError(f"Training images not found at: {config.IMAGES_TRAIN}")
+    if not config.IMAGES_VAL.exists():
+        raise FileNotFoundError(f"Validation images not found at: {config.IMAGES_VAL}")
+    
+    # Create data.yaml
     data_yaml = {
-        'path': str(config.YOLO_DATASET.absolute()),
-        'train': 'train/images',
-        'val': 'val/images',
-        'test': 'test/images',
+        'path': str(config.DATASET_ROOT.absolute()),
+        'train': 'train',  # Relative to 'path'
+        'val': 'val',
+        'test': 'test',
         'nc': len(config.CLASS_NAMES),
         'names': list(config.CLASS_NAMES.values())
     }
     
-    yaml_path = config.YOLO_DATASET / 'data.yaml'
-    
     with open(yaml_path, 'w') as f:
         yaml.dump(data_yaml, f, default_flow_style=False, sort_keys=False)
     
+    print(f"✓ Dataset configured at: {config.DATASET_ROOT}")
     print(f"✓ data.yaml created at: {yaml_path}")
-    print(f"\nConfiguration:")
-    print(f"  Path: {data_yaml['path']}")
-    print(f"  Classes: {data_yaml['nc']}")
-    print(f"  Names: {data_yaml['names']}")
+    print(f"\nDataset structure:")
+    print(f"  Training images: {config.IMAGES_TRAIN}")
+    print(f"  Validation images: {config.IMAGES_VAL}")
+    print(f"  Test images: {config.IMAGES_TEST}")
+    print(f"\nClasses ({len(config.CLASS_NAMES)}): {list(config.CLASS_NAMES.values())}")
     
     return yaml_path
 
 
 # ============================================================================
-# TRAINING
+# WANDB INTEGRATION
 # ============================================================================
 
 def initialize_wandb(config, enabled=True):
@@ -319,7 +154,6 @@ def initialize_wandb(config, enabled=True):
     print("="*70)
     
     try:
-        # Try to login (will use existing credentials or prompt)
         if wandb.login(relogin=False):
             run = wandb.init(
                 project=config.WANDB_PROJECT,
@@ -333,7 +167,6 @@ def initialize_wandb(config, enabled=True):
                     "patience": config.PATIENCE,
                     "device": config.DEVICE,
                     "classes": config.CLASS_NAMES,
-                    "environment": "Colab" if config.IS_COLAB else "VM",
                 }
             )
             
@@ -350,8 +183,12 @@ def initialize_wandb(config, enabled=True):
     return None
 
 
+# ============================================================================
+# TRAINING
+# ============================================================================
+
 def train_model(config, yaml_path, use_wandb=True):
-    """Train YOLOv11 model on VM/Cloud"""
+    """Train YOLOv11 model"""
     print("\n" + "="*70)
     print("STARTING YOLOV11 TRAINING")
     print("="*70)
@@ -360,7 +197,7 @@ def train_model(config, yaml_path, use_wandb=True):
     print(f"\nLoading model: {config.MODEL}")
     model = YOLO(config.MODEL)
     
-    # Training parameters optimized for cloud
+    # Training parameters
     train_args = {
         'data': str(yaml_path),
         'epochs': config.EPOCHS,
@@ -369,7 +206,7 @@ def train_model(config, yaml_path, use_wandb=True):
         'device': config.DEVICE,
         'patience': config.PATIENCE,
         'project': str(config.BASE_DIR / 'runs'),
-        'name': 'yolov11_wildlife_vm',
+        'name': 'yolov11_wildlife',
         'exist_ok': True,
         'pretrained': True,
         'optimizer': 'auto',
@@ -380,7 +217,7 @@ def train_model(config, yaml_path, use_wandb=True):
         'save': True,
         'save_period': config.SAVE_PERIOD,
         'workers': config.WORKERS,
-        'amp': True,  # Automatic Mixed Precision for faster training
+        'amp': True,  # Automatic Mixed Precision
         
         # Data augmentation
         'hsv_h': 0.015,
@@ -404,6 +241,7 @@ def train_model(config, yaml_path, use_wandb=True):
     print(f"  Image size: {config.IMG_SIZE}")
     print(f"  Device: {config.DEVICE}")
     print(f"  Workers: {config.WORKERS}")
+    print(f"  Save period: Every {config.SAVE_PERIOD} epochs")
     print(f"  Mixed Precision: Enabled")
     print(f"  Wandb: {'Enabled' if use_wandb else 'Disabled'}")
     
@@ -458,16 +296,13 @@ def validate_model(model, yaml_path, config):
 # ============================================================================
 
 def main():
-    """Main training pipeline for VM/Cloud"""
-    parser = argparse.ArgumentParser(description='Train YOLOv11 for Wildlife Detection (VM/Cloud)')
+    """Main training pipeline"""
+    parser = argparse.ArgumentParser(description='Train YOLOv11 for Wildlife Detection')
     parser.add_argument('--no-wandb', action='store_true', help='Disable wandb logging')
     parser.add_argument('--epochs', type=int, default=None, help='Number of epochs')
     parser.add_argument('--batch', type=int, default=None, help='Batch size')
     parser.add_argument('--imgsz', type=int, default=None, help='Image size')
-    parser.add_argument('--skip-conversion', action='store_true', 
-                       help='Skip dataset conversion')
-    parser.add_argument('--wandb-key', type=str, default=None,
-                       help='Wandb API key (for automated setup)')
+    parser.add_argument('--wandb-key', type=str, default=None, help='Wandb API key')
     
     args = parser.parse_args()
     
@@ -476,7 +311,7 @@ def main():
         wandb.login(key=args.wandb_key)
     
     # Initialize configuration
-    config = VMConfig()
+    config = Config()
     
     # Override with CLI args
     if args.epochs:
@@ -490,55 +325,62 @@ def main():
     print_system_info()
     
     print("\n" + "="*70)
-    print("YOLOv11 WILDLIFE DETECTION TRAINING (VM/Cloud)")
+    print("YOLOv11 WILDLIFE DETECTION TRAINING")
     print("Project: Guacamaya - Microsoft AI for Good Lab")
     print("="*70)
     print(f"\nConfiguration:")
-    print(f"  Dataset: {config.DATASET_ROOT}")
-    print(f"  Output: {config.YOLO_DATASET}")
+    print(f"  Code directory: {config.BASE_DIR}")
+    print(f"  Dataset directory: {config.DATASET_ROOT}")
     print(f"  Model: {config.MODEL}")
     print(f"  Classes: {list(config.CLASS_NAMES.values())}")
     
     # Verify dataset exists
     if not config.DATASET_ROOT.exists():
         print(f"\n❌ ERROR: Dataset not found at {config.DATASET_ROOT}")
-        print("   Please update BASE_DIR in VMConfig class to point to your dataset")
+        print(f"   Expected structure:")
+        print(f"   {config.DATASET_ROOT.parent}/")
+        print(f"   ├── yolo_vm/          (code)")
+        print(f"   └── general_dataset/  (data)")
         return 1
     
-    # Step 1: Prepare dataset
-    if not args.skip_conversion:
-        success = prepare_dataset(config)
-        if not success:
-            print("\n❌ ERROR: Dataset preparation failed!")
-            return 1
-    else:
-        print("\n⏭  Skipping dataset conversion")
+    if not config.IMAGES_TRAIN.exists():
+        print(f"\n❌ ERROR: Training images not found at {config.IMAGES_TRAIN}")
+        return 1
     
-    # Step 2: Create data.yaml
-    yaml_path = create_data_yaml(config)
+    # Create data.yaml
+    try:
+        yaml_path = create_data_yaml(config)
+    except Exception as e:
+        print(f"\n❌ ERROR: Failed to configure dataset: {e}")
+        return 1
     
-    # Step 3: Initialize wandb
+    # Initialize wandb
     wandb_run = initialize_wandb(config, enabled=not args.no_wandb)
     
-    # Step 4: Train model
+    # Train model
     try:
         model, train_results = train_model(config, yaml_path, use_wandb=(wandb_run is not None))
         
-        # Step 5: Validate model
+        # Validate model
         val_results = validate_model(model, yaml_path, config)
         
-        # Step 6: Save final information
-        best_model_path = config.BASE_DIR / 'runs' / 'yolov11_wildlife_vm' / 'weights' / 'best.pt'
+        # Print final information
+        best_model_path = config.BASE_DIR / 'runs' / 'yolov11_wildlife' / 'weights' / 'best.pt'
+        last_model_path = config.BASE_DIR / 'runs' / 'yolov11_wildlife' / 'weights' / 'last.pt'
         
         print("\n" + "="*70)
         print("TRAINING PIPELINE COMPLETE! ✓")
         print("="*70)
-        print(f"\nBest model: {best_model_path}")
-        print(f"Results: {config.BASE_DIR / 'runs' / 'yolov11_wildlife_vm'}")
+        print(f"\nModel Checkpoints:")
+        print(f"  Best model: {best_model_path}")
+        print(f"  Last model: {last_model_path}")
+        print(f"\nResults directory: {config.BASE_DIR / 'runs' / 'yolov11_wildlife'}")
         
         if wandb_run:
-            print(f"Wandb: {wandb_run.get_url()}")
+            print(f"\nWandb Dashboard: {wandb_run.get_url()}")
             wandb.finish()
+        
+        print("\n" + "="*70)
         
         return 0
         
@@ -555,4 +397,3 @@ def main():
 
 if __name__ == "__main__":
     exit(main())
-

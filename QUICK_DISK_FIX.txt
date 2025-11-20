@@ -1,0 +1,136 @@
+================================================================================
+ 🚨 DISK SPACE ERROR - IMMEDIATE FIX
+================================================================================
+
+ERROR: "No space left on device" during conda installation
+
+================================================================================
+ ⚡ FASTEST SOLUTION (Do this NOW)
+================================================================================
+
+Run the automatic cleanup script:
+
+./cleanup_and_setup.sh
+
+(This will clean up space and install with pip - much smaller!)
+
+================================================================================
+ 📋 MANUAL FIX (If script doesn't work)
+================================================================================
+
+Step 1: CHECK SPACE
+  df -h
+
+Step 2: CLEAN UP
+  conda clean --all -y
+  rm -rf ~/.cache/pip
+  rm -rf ~/.cache/torch
+  rm -rf ~/miniconda/pkgs/*
+
+Step 3: CHECK AGAIN
+  df -h
+  (Need at least 15GB free)
+
+Step 4: INSTALL WITH PIP (not conda - saves 5-7 GB!)
+  cd /home/estudiantes/grupo_12/sahariandataset/yolo_vm
+  python3 -m venv venv
+  source venv/bin/activate
+  pip install -r requirements.txt
+
+Step 5: VERIFY
+  python test_setup.py
+
+Step 6: TRAIN
+  python train_vm.py --epochs 50 --batch 8
+
+================================================================================
+ 💾 SPACE REQUIREMENTS
+================================================================================
+
+Conda installation:  ~10 GB  ❌ (causes the error)
+Pip installation:    ~3 GB   ✅ (recommended)
+
+Training needs:      ~4 GB
+Total recommended:   15+ GB free
+
+================================================================================
+ 🧹 EMERGENCY CLEANUP COMMANDS
+================================================================================
+
+# Clean everything conda
+conda clean --all -y
+rm -rf ~/miniconda/pkgs/*
+
+# Clean all caches
+rm -rf ~/.cache/pip
+rm -rf ~/.cache/torch
+rm -rf ~/.cache/wandb
+
+# Remove failed environment
+conda env remove -n yolov11-wildlife -y
+
+# Check space
+df -h
+
+================================================================================
+ ✅ RECOMMENDED: USE PIP INSTEAD OF CONDA
+================================================================================
+
+Why pip is better for limited space:
+  ✓ 3x smaller (3GB vs 10GB)
+  ✓ Faster installation
+  ✓ Auto-detects CUDA
+  ✓ Works just as well
+
+Commands:
+  cd /home/estudiantes/grupo_12/sahariandataset/yolo_vm
+  python3 -m venv venv
+  source venv/bin/activate
+  pip install -r requirements.txt
+  python test_setup.py
+
+================================================================================
+ 🆘 IF STILL NOT ENOUGH SPACE
+================================================================================
+
+1. Check what's using space:
+   du -sh ~/* | sort -h
+
+2. Remove unnecessary files:
+   - Old conda environments: conda env list
+   - Large files: find ~ -type f -size +100M
+   - Zip files: rm *.zip (after extraction)
+
+3. Contact admin for more space:
+   Your VM may have a quota limit
+
+4. Use different disk (if available):
+   df -h  # Check all disks
+   # Install venv on larger disk
+
+================================================================================
+ 📞 NEED MORE HELP?
+================================================================================
+
+See complete guide:
+  cat DISK_SPACE_FIX.md
+
+Or check:
+  - VM_SETUP_GUIDE.txt
+  - CONDA_TROUBLESHOOTING.md
+
+================================================================================
+
+🚀 QUICK START (COPY THESE COMMANDS):
+
+cd /home/estudiantes/grupo_12/sahariandataset/yolo_vm
+conda clean --all -y
+rm -rf ~/.cache/*
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python test_setup.py
+
+================================================================================
+
+
