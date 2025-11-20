@@ -104,8 +104,10 @@ def test_dataset_structure():
         from train_yolov11_wildlife import Config
         config = Config()
         
-        print(f"Base Directory: {config.BASE_DIR}")
-        print(f"Dataset Root: {config.DATASET_ROOT}")
+        print(f"Detected paths:")
+        print(f"  Code directory (BASE_DIR): {config.BASE_DIR}")
+        print(f"  Dataset directory: {config.DATASET_ROOT}")
+        
         
         # Check directories
         required_dirs = [

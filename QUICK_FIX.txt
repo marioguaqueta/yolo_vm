@@ -1,0 +1,101 @@
+================================================================================
+ 🚨 QUICK FIX - Conda Environment Issues
+================================================================================
+
+PROBLEM: "pytorch-cuda 11.8 is not installable"
+SOLUTION: Use the simple environment file (PyTorch via pip)
+
+================================================================================
+ ⚡ FASTEST SOLUTION (Recommended)
+================================================================================
+
+Option 1: Interactive Script
+  ./create_environment.sh
+  (Choose option 1: Simple)
+
+Option 2: Direct Command
+  conda env create -f environment-simple.yml
+  conda activate yolov11-wildlife
+  python test_setup.py
+
+================================================================================
+ 📋 AVAILABLE ENVIRONMENT FILES
+================================================================================
+
+environment-simple.yml     ← Use this (PyTorch via pip - most reliable)
+environment.yml            ← Original (all conda - may have conflicts)
+environment-cpu.yml        ← For machines without GPU
+
+================================================================================
+ 🔧 STEP-BY-STEP FIX
+================================================================================
+
+1. REMOVE FAILED ENVIRONMENT (if exists)
+   conda env remove -n yolov11-wildlife
+
+2. CREATE WITH SIMPLE FILE
+   conda env create -f environment-simple.yml
+
+3. ACTIVATE
+   conda activate yolov11-wildlife
+
+4. VERIFY
+   python test_setup.py
+
+5. TRAIN
+   python train_vm.py --epochs 50 --batch 8
+
+================================================================================
+ 🆘 IF SIMPLE ENVIRONMENT ALSO FAILS
+================================================================================
+
+Try with Mamba (better solver):
+  conda install mamba -n base -c conda-forge
+  mamba env create -f environment-simple.yml
+
+Or use Pip instead:
+  python3 -m venv venv
+  source venv/bin/activate
+  pip install -r requirements.txt
+
+================================================================================
+ ✅ WHICH OPTION TO CHOOSE?
+================================================================================
+
+RECOMMENDED FOR MOST USERS:
+  conda env create -f environment-simple.yml
+
+WHY?
+  ✓ PyTorch via pip (auto-detects CUDA)
+  ✓ Fewer dependency conflicts
+  ✓ Usually works without issues
+
+FOR CPU ONLY:
+  conda env create -f environment-cpu.yml
+
+IF EVERYTHING FAILS:
+  python3 -m venv venv
+  source venv/bin/activate
+  pip install -r requirements.txt
+
+================================================================================
+ 📖 MORE HELP
+================================================================================
+
+Complete troubleshooting guide:
+  cat CONDA_TROUBLESHOOTING.md
+
+Or see:
+  CONDA_SETUP.md
+  README_TRAINING.md
+
+================================================================================
+
+🚀 QUICK START:
+
+./create_environment.sh
+
+(This interactive script will guide you through the setup)
+
+================================================================================
+

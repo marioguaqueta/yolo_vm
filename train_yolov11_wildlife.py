@@ -24,9 +24,10 @@ import argparse
 class Config:
     """Training configuration"""
     
-    # Dataset paths
-    BASE_DIR = Path("/Users/marioguaqueta/Desktop/MAIA/2025-4/ProyectoFinal/train_config/Yolo")
-    DATASET_ROOT = BASE_DIR / "general_dataset"
+    # Dataset paths - Using relative paths for portability
+    # Code structure: parent_dir/yolo_vm/ (code) and parent_dir/general_dataset/ (data)
+    BASE_DIR = Path(__file__).parent.absolute()  # yolo_vm directory
+    DATASET_ROOT = BASE_DIR.parent / "general_dataset"  # sibling directory
     IMAGES_TRAIN = DATASET_ROOT / "train"
     IMAGES_VAL = DATASET_ROOT / "val"
     IMAGES_TEST = DATASET_ROOT / "test"

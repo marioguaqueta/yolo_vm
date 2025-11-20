@@ -1,7 +1,5 @@
 name: yolov11-wildlife
 channels:
-  - pytorch
-  - nvidia
   - conda-forge
   - defaults
 
@@ -9,18 +7,7 @@ dependencies:
   # Python version
   - python=3.10
   
-  # PyTorch and CUDA (adjust cuda version based on your GPU)
-  # For CUDA 11.8 (most common)
-  - pytorch::pytorch>=2.0.0
-  - pytorch::torchvision>=0.15.0
-  - pytorch::pytorch-cuda=11.8
-  
-  # For CPU only, comment above 3 lines and uncomment below:
-  # - pytorch::pytorch>=2.0.0
-  # - pytorch::torchvision>=0.15.0
-  # - pytorch::cpuonly
-  
-  # Data Science & Processing
+  # Data Science & Processing (conda)
   - pandas>=1.5.0
   - numpy>=1.21.0
   - pillow>=9.0.0
@@ -40,9 +27,13 @@ dependencies:
   - ipython
   - jupyter
   
-  # Pip dependencies (packages better installed via pip)
+  # Pip dependencies (install PyTorch via pip - usually more reliable)
   - pip
   - pip:
+    # PyTorch with CUDA (will auto-detect your system)
+    - torch>=2.0.0
+    - torchvision>=0.15.0
+    
     # YOLOv11 (Ultralytics)
     - ultralytics>=8.0.0
     
@@ -51,4 +42,8 @@ dependencies:
     
     # Additional utilities
     - opencv-python>=4.7.0
+
+# NOTE: This environment installs PyTorch via pip instead of conda
+# This is often more reliable and will automatically detect your CUDA version
+# For specific CUDA version, visit: https://pytorch.org/get-started/locally/
 

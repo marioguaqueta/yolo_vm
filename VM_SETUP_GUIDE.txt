@@ -1,0 +1,361 @@
+================================================================================
+ 🖥️  VM SETUP GUIDE - Universidad de los Andes
+ YOLOv11 Wildlife Detection Training
+================================================================================
+
+📍 YOUR VM PATHS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Parent Directory:
+  /home/estudiantes/grupo_12/sahariandataset/
+
+Code Directory:
+  /home/estudiantes/grupo_12/sahariandataset/yolo_vm/
+
+Data Directory:
+  /home/estudiantes/grupo_12/sahariandataset/general_dataset/
+
+================================================================================
+ 📁 DIRECTORY STRUCTURE
+================================================================================
+
+/home/estudiantes/grupo_12/sahariandataset/
+│
+├── yolo_vm/                            ← YOUR CODE (this folder)
+│   │
+│   ├── Training Scripts
+│   │   ├── train_yolov11_wildlife.py   Main training script
+│   │   ├── train_vm.py                 VM-optimized training
+│   │   └── test_setup.py               Setup verification
+│   │
+│   ├── Setup Scripts
+│   │   ├── setup_and_train.sh          Pip/venv setup
+│   │   └── setup_conda_and_train.sh    Conda setup
+│   │
+│   ├── Configuration
+│   │   ├── environment.yml             Conda environment
+│   │   └── requirements.txt            Pip requirements
+│   │
+│   ├── Documentation
+│   │   ├── README_TRAINING.md
+│   │   ├── QUICKSTART.md
+│   │   ├── CONDA_SETUP.md
+│   │   ├── DIRECTORY_STRUCTURE.md      ← Read this!
+│   │   └── VM_SETUP_GUIDE.txt          ← This file
+│   │
+│   └── Output (created after training)
+│       ├── runs/                       Training results
+│       │   └── yolov11_wildlife_vm/
+│       │       └── weights/
+│       │           ├── best.pt         ← Your trained model
+│       │           └── last.pt
+│       └── yolo_wildlife_dataset/      Converted YOLO data
+│
+└── general_dataset/                    ← YOUR DATA (sibling folder)
+    ├── train/                          928 images
+    ├── val/                            111 images
+    ├── test/                           258 images
+    └── groundtruth/
+        └── csv/
+            ├── train_big_size_A_B_E_K_WH_WB.csv
+            ├── val_big_size_A_B_E_K_WH_WB.csv
+            └── test_big_size_A_B_E_K_WH_WB.csv
+
+================================================================================
+ 🚀 QUICK START ON VM
+================================================================================
+
+1️⃣  SSH INTO VM
+   ssh usuario@vm-ip
+
+2️⃣  NAVIGATE TO CODE DIRECTORY
+   cd /home/estudiantes/grupo_12/sahariandataset/yolo_vm
+
+3️⃣  VERIFY STRUCTURE (first time)
+   ls -la ../
+   # Should show: yolo_vm/ and general_dataset/
+
+4️⃣  TEST SETUP
+   python test_setup.py
+   # Verifies paths, GPU, dependencies
+
+5️⃣  CREATE CONDA ENVIRONMENT
+   conda env create -f environment.yml
+   conda activate yolov11-wildlife
+
+6️⃣  START TRAINING
+   python train_vm.py --epochs 50 --batch 8 --imgsz 2048
+
+================================================================================
+ 🎯 AUTOMATIC PATH DETECTION
+================================================================================
+
+✅ ALL PATHS ARE NOW AUTOMATIC!
+
+The scripts use relative paths and detect:
+  Code directory:    Path(__file__).parent
+  Dataset directory: Path(__file__).parent.parent / "general_dataset"
+
+No manual path configuration needed! ✨
+
+Verification:
+  python -c "from train_vm import VMConfig; c=VMConfig(); print(f'Code: {c.BASE_DIR}'); print(f'Data: {c.DATASET_ROOT}')"
+
+Expected output:
+  Code: /home/estudiantes/grupo_12/sahariandataset/yolo_vm
+  Data: /home/estudiantes/grupo_12/sahariandataset/general_dataset
+
+================================================================================
+ 🐍 CONDA SETUP (RECOMMENDED)
+================================================================================
+
+# One-command setup
+./setup_conda_and_train.sh
+
+# Or manual steps:
+
+# 1. Create environment
+conda env create -f environment.yml
+
+# 2. Activate
+conda activate yolov11-wildlife
+
+# 3. Verify GPU
+python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
+
+# 4. Login to wandb
+wandb login
+
+# 5. Start training
+python train_vm.py --epochs 50 --batch 8
+
+================================================================================
+ 📝 PIP SETUP (ALTERNATIVE)
+================================================================================
+
+# 1. Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Login to wandb
+wandb login
+
+# 4. Start training
+python train_vm.py --epochs 50 --batch 8
+
+================================================================================
+ 🔧 TRAINING COMMANDS
+================================================================================
+
+BASIC TRAINING:
+  python train_vm.py
+
+CUSTOM PARAMETERS:
+  python train_vm.py --epochs 100 --batch 8 --imgsz 2048
+
+WITHOUT WANDB:
+  python train_vm.py --no-wandb
+
+SKIP DATA CONVERSION (if already done):
+  python train_vm.py --skip-conversion
+
+RUN IN BACKGROUND (recommended for long training):
+  nohup python train_vm.py --epochs 50 --batch 8 > training.log 2>&1 &
+
+MONITOR BACKGROUND JOB:
+  tail -f training.log
+
+USING TMUX (better than nohup):
+  tmux new -s yolo_training
+  conda activate yolov11-wildlife
+  python train_vm.py --epochs 50 --batch 8
+  # Press Ctrl+B, then D to detach
+  
+  # Reattach later
+  tmux attach -t yolo_training
+
+================================================================================
+ 📊 MONITORING TRAINING
+================================================================================
+
+WANDB DASHBOARD:
+  https://wandb.ai/your-username/yolov11-wildlife-detection
+  
+  Real-time metrics:
+    - Training/validation loss
+    - mAP@50 and mAP@50-95
+    - Per-class performance
+    - GPU utilization
+    - Learning curves
+
+LOCAL RESULTS:
+  /home/estudiantes/grupo_12/sahariandataset/yolo_vm/runs/yolov11_wildlife_vm/
+  
+  Files:
+    weights/best.pt    ← Best model
+    weights/last.pt    ← Latest checkpoint
+    results.csv        ← All metrics
+    results.png        ← Training curves
+    confusion_matrix.png
+
+CHECK GPU USAGE:
+  watch -n 1 nvidia-smi
+
+CHECK TRAINING PROGRESS:
+  tail -f training.log
+
+================================================================================
+ ⏱️  EXPECTED TRAINING TIME
+================================================================================
+
+On typical GPU server (V100/A100):
+  50 epochs, batch 8, 2048px: ~2-4 hours
+  
+On T4 GPU (Google Colab):
+  50 epochs, batch 8, 2048px: ~3-5 hours
+
+On CPU:
+  ⚠️  NOT RECOMMENDED - would take 30-40 hours
+
+================================================================================
+ 🐛 TROUBLESHOOTING
+================================================================================
+
+ISSUE: Dataset not found
+FIX:
+  # Verify directory structure
+  ls -la /home/estudiantes/grupo_12/sahariandataset/
+  # Should show: yolo_vm/ and general_dataset/
+  
+  # Run test
+  cd /home/estudiantes/grupo_12/sahariandataset/yolo_vm
+  python test_setup.py
+
+ISSUE: Out of Memory
+FIX:
+  # Reduce batch size or image size
+  python train_vm.py --batch 4 --imgsz 1024
+
+ISSUE: No GPU detected
+FIX:
+  # Check GPU
+  nvidia-smi
+  
+  # Check PyTorch CUDA
+  python -c "import torch; print(torch.cuda.is_available())"
+  
+  # Reinstall PyTorch with CUDA
+  conda install pytorch torchvision pytorch-cuda=11.8 -c pytorch
+
+ISSUE: Conda environment creation fails
+FIX:
+  # Update conda
+  conda update -n base conda
+  
+  # Use mamba (faster)
+  conda install mamba -n base -c conda-forge
+  mamba env create -f environment.yml
+
+ISSUE: Permission denied
+FIX:
+  # Make scripts executable
+  chmod +x *.sh *.py
+
+ISSUE: Wandb login fails
+FIX:
+  # Get API key from https://wandb.ai/authorize
+  wandb login YOUR_API_KEY
+  
+  # Or train without wandb
+  python train_vm.py --no-wandb
+
+================================================================================
+ 📂 IMPORTANT PATHS SUMMARY
+================================================================================
+
+Working Directory:
+  cd /home/estudiantes/grupo_12/sahariandataset/yolo_vm
+
+Dataset:
+  /home/estudiantes/grupo_12/sahariandataset/general_dataset/
+
+Training Images:
+  /home/estudiantes/grupo_12/sahariandataset/general_dataset/train/
+
+Annotations:
+  /home/estudiantes/grupo_12/sahariandataset/general_dataset/groundtruth/csv/
+
+Results:
+  /home/estudiantes/grupo_12/sahariandataset/yolo_vm/runs/yolov11_wildlife_vm/
+
+Best Model:
+  /home/estudiantes/grupo_12/sahariandataset/yolo_vm/runs/yolov11_wildlife_vm/weights/best.pt
+
+================================================================================
+ ✅ VERIFICATION CHECKLIST
+================================================================================
+
+□ SSH connection to VM works
+□ Directory structure is correct (yolo_vm and general_dataset are siblings)
+□ GPU is available (nvidia-smi shows GPU)
+□ Conda is installed (conda --version)
+□ Code is in yolo_vm directory
+□ Dataset is in general_dataset directory
+□ test_setup.py passes all checks
+□ Wandb account created and logged in
+□ Sufficient disk space (20GB+)
+
+Run this to verify everything:
+  cd /home/estudiantes/grupo_12/sahariandataset/yolo_vm
+  python test_setup.py
+
+================================================================================
+ 🎯 COMPLETE WORKFLOW
+================================================================================
+
+# FIRST TIME SETUP
+ssh usuario@vm-ip
+cd /home/estudiantes/grupo_12/sahariandataset/yolo_vm
+python test_setup.py
+./setup_conda_and_train.sh
+
+# SUBSEQUENT TRAINING SESSIONS
+ssh usuario@vm-ip
+cd /home/estudiantes/grupo_12/sahariandataset/yolo_vm
+conda activate yolov11-wildlife
+python train_vm.py --epochs 50 --batch 8
+
+# RUN IN BACKGROUND AND LOGOUT
+ssh usuario@vm-ip
+cd /home/estudiantes/grupo_12/sahariandataset/yolo_vm
+conda activate yolov11-wildlife
+nohup python train_vm.py --epochs 50 --batch 8 > training.log 2>&1 &
+exit
+
+# CHECK PROGRESS LATER
+ssh usuario@vm-ip
+tail -f /home/estudiantes/grupo_12/sahariandataset/yolo_vm/training.log
+
+================================================================================
+ 📚 DOCUMENTATION
+================================================================================
+
+Full guides available:
+  - DIRECTORY_STRUCTURE.md   Directory layout explained
+  - CONDA_SETUP.md            Complete conda guide
+  - README_TRAINING.md        Full training documentation
+  - QUICKSTART.md             Quick reference
+  - USAGE_GUIDE.txt           Detailed usage
+
+================================================================================
+
+🚀 READY TO START TRAINING ON VM!
+
+cd /home/estudiantes/grupo_12/sahariandataset/yolo_vm
+./setup_conda_and_train.sh
+
+================================================================================
+

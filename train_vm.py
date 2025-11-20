@@ -33,13 +33,20 @@ class VMConfig:
     # ===== MODIFY THESE PATHS FOR YOUR ENVIRONMENT =====
     if IS_COLAB:
         # Google Colab with Google Drive
-        BASE_DIR = Path("/content/drive/MyDrive/MAIA_Final_Project_2025/Yolo")
+        BASE_DIR = Path("/content/drive/MyDrive/MAIA_Final_Project_2025/yolo_vm")
+        DATASET_ROOT = BASE_DIR.parent / "general_dataset"
     else:
-        # Generic cloud VM (AWS, Azure, etc.) - UPDATE THIS PATH
-        BASE_DIR = Path("/mnt/data/Yolo")  # <- CHANGE THIS TO YOUR VM PATH
+        # Generic cloud VM or local path
+        # Using relative paths: code in yolo_vm/, data in sibling general_dataset/
+        BASE_DIR = Path(__file__).parent.absolute()  # yolo_vm directory
+        DATASET_ROOT = BASE_DIR.parent / "general_dataset"  # sibling directory
+        
+        # For Universidad de los Andes VM, the structure is:
+        # /home/estudiantes/grupo_12/sahariandataset/
+        #   ├── yolo_vm/          <- Code here (this script)
+        #   └── general_dataset/  <- Data here
     
-    # Dataset paths
-    DATASET_ROOT = BASE_DIR / "general_dataset"
+    # Dataset paths (relative to DATASET_ROOT)
     IMAGES_TRAIN = DATASET_ROOT / "train"
     IMAGES_VAL = DATASET_ROOT / "val"
     IMAGES_TEST = DATASET_ROOT / "test"

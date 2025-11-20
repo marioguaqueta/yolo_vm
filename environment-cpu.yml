@@ -1,7 +1,6 @@
 name: yolov11-wildlife
 channels:
   - pytorch
-  - nvidia
   - conda-forge
   - defaults
 
@@ -9,16 +8,10 @@ dependencies:
   # Python version
   - python=3.10
   
-  # PyTorch and CUDA (adjust cuda version based on your GPU)
-  # For CUDA 11.8 (most common)
+  # PyTorch CPU-only
   - pytorch::pytorch>=2.0.0
   - pytorch::torchvision>=0.15.0
-  - pytorch::pytorch-cuda=11.8
-  
-  # For CPU only, comment above 3 lines and uncomment below:
-  # - pytorch::pytorch>=2.0.0
-  # - pytorch::torchvision>=0.15.0
-  # - pytorch::cpuonly
+  - pytorch::cpuonly
   
   # Data Science & Processing
   - pandas>=1.5.0

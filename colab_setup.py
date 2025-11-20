@@ -21,7 +21,9 @@ print("Mounting Google Drive...")
 drive.mount('/content/drive')
 
 # Set your project path in Google Drive
-PROJECT_PATH = "/content/drive/MyDrive/MAIA_Final_Project_2025/Yolo"  # UPDATE THIS
+# Note: This should point to your CODE directory (yolo_vm)
+# The dataset should be in a sibling directory: ../general_dataset
+PROJECT_PATH = "/content/drive/MyDrive/MAIA_Final_Project_2025/yolo_vm"  # UPDATE THIS
 
 # Change to project directory
 os.chdir(PROJECT_PATH)
@@ -71,8 +73,8 @@ wandb.login()
 import os
 from pathlib import Path
 
-BASE_DIR = Path(PROJECT_PATH)
-DATASET_ROOT = BASE_DIR / "general_dataset"
+BASE_DIR = Path(PROJECT_PATH)  # yolo_vm directory
+DATASET_ROOT = BASE_DIR.parent / "general_dataset"  # sibling directory
 
 print(f"Checking dataset at: {DATASET_ROOT}")
 print(f"\nDataset structure:")
