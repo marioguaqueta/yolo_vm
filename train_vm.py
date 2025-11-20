@@ -26,7 +26,7 @@ class Config:
     # Code structure: parent_dir/yolo_vm/ (code) and parent_dir/general_dataset/ (data)
     BASE_DIR = Path(__file__).parent.absolute()  # yolo_vm directory
     print(f"BASE_DIR: {BASE_DIR}")
-    DATASET_ROOT = BASE_DIR.parent / "general_dataset"  # sibling directory
+    DATASET_ROOT = BASE_DIR.parent / "general_dataset/general_dataset"  # sibling directory
     print(f"DATASET_ROOT: {DATASET_ROOT}")
     
     # For Universidad de los Andes VM:
