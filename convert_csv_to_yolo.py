@@ -2,6 +2,17 @@
 """
 CSV to YOLO Format Converter
 Converts CSV annotations (x1,y1,x2,y2,Label) to YOLO format (class x_center y_center width height)
+
+IMPORTANT CLASS MAPPING:
+CSV Labels (1-6) → YOLO Classes (0-5)
+  1 → 0: Buffalo
+  2 → 1: Elephant
+  3 → 2: Kudu
+  4 → 3: Topi
+  5 → 4: Warthog
+  6 → 5: Waterbuck
+
+YOLO requires 0-indexed class IDs!
 """
 
 import pandas as pd
@@ -75,7 +86,8 @@ def convert_csv_to_yolo(csv_path, images_dir, output_labels_dir):
         with open(label_file, 'w') as f:
             for _, row in group.iterrows():
                 # CSV format: Image, x1, y1, x2, y2, Label
-                class_id = int(row['Label'])
+                # Convert CSV labels (1-6) to YOLO format (0-5)
+                class_id = int(row['Label']) - 1  # CRITICAL: YOLO is 0-indexed!
                 x1, y1, x2, y2 = float(row['x1']), float(row['y1']), float(row['x2']), float(row['y2'])
                 
                 # Convert to YOLO format (normalized)
@@ -120,6 +132,14 @@ def main():
     print("CSV TO YOLO FORMAT CONVERTER")
     print("="*70)
     print(f"\nDataset root: {DATASET_ROOT}")
+    print("\nClass Mapping (CSV → YOLO):")
+    print("  1 → 0: Buffalo")
+    print("  2 → 1: Elephant")
+    print("  3 → 2: Kudu")
+    print("  4 → 3: Topi")
+    print("  5 → 4: Warthog")
+    print("  6 → 5: Waterbuck")
+    print("  (YOLO requires 0-indexed class IDs)")
     
     # Check if dataset exists
     if not DATASET_ROOT.exists():

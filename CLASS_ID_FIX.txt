@@ -1,0 +1,224 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║          ✅ CLASS ID FIX - Label class 6 exceeds dataset              ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+ERROR MESSAGE:
+  "Label class 6 exceeds dataset class count 6. Possible class labels are 0-5"
+
+═══════════════════════════════════════════════════════════════════════
+
+🔍 ROOT CAUSE
+
+The CSV files have class labels 1-6:
+  1 = Buffalo
+  2 = Elephant
+  3 = Kudu
+  4 = Topi
+  5 = Warthog
+  6 = Waterbuck
+
+But YOLO REQUIRES class labels to be 0-indexed (0-5):
+  0 = Buffalo   ← Must start at 0!
+  1 = Elephant
+  2 = Kudu
+  3 = Topi
+  4 = Warthog
+  5 = Waterbuck
+
+The convert_csv_to_yolo.py script was NOT subtracting 1 from the CSV labels,
+so the .txt label files had class IDs 1-6 (WRONG!), causing the error.
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ WHAT WAS FIXED
+
+1. ✅ train_vm.py - CLASS_NAMES corrected to 0-5 (not 1-6)
+
+2. ✅ convert_csv_to_yolo.py - Now subtracts 1 from CSV labels:
+   OLD: class_id = int(row['Label'])        # Kept 1-6 ❌
+   NEW: class_id = int(row['Label']) - 1    # Converts to 0-5 ✅
+
+═══════════════════════════════════════════════════════════════════════
+
+🚀 FIX ON THE VM (3 Steps)
+
+┌───────────────────────────────────────────────────────────────────┐
+│ Step 1: Delete old label files (they have wrong class IDs)       │
+└───────────────────────────────────────────────────────────────────┘
+
+cd /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm
+
+# Delete old labels directory if it exists
+rm -rf ../general_dataset/labels/
+
+# If you already ran reorganize script, also delete:
+rm -rf ../general_dataset/images/
+
+echo "✓ Old labels deleted"
+
+┌───────────────────────────────────────────────────────────────────┐
+│ Step 2: Re-run CSV conversion (creates labels with 0-5)          │
+└───────────────────────────────────────────────────────────────────┘
+
+python convert_csv_to_yolo.py
+
+# You should see:
+# "Class Mapping (CSV → YOLO):"
+# "  1 → 0: Buffalo"
+# "  2 → 1: Elephant"
+# etc.
+
+echo "✓ New labels created with correct class IDs (0-5)"
+
+┌───────────────────────────────────────────────────────────────────┐
+│ Step 3: Re-run reorganization                                     │
+└───────────────────────────────────────────────────────────────────┘
+
+python reorganize_to_yolo_structure.py
+
+echo "✓ Structure reorganized"
+
+┌───────────────────────────────────────────────────────────────────┐
+│ Step 4: Verify labels have correct class IDs                     │
+└───────────────────────────────────────────────────────────────────┘
+
+# Check a few label files
+head -n 5 ../general_dataset/labels/train/*.txt
+
+# You should see class IDs of 0, 1, 2, 3, 4, or 5
+# NOT 1, 2, 3, 4, 5, or 6!
+
+# Example CORRECT output:
+# 0 0.5234 0.6123 0.1234 0.0987
+# 1 0.2341 0.3456 0.0876 0.1123
+# 2 0.4567 0.7890 0.0543 0.0321
+
+┌───────────────────────────────────────────────────────────────────┐
+│ Step 5: NOW TRAIN! 🚀                                            │
+└───────────────────────────────────────────────────────────────────┘
+
+python train_vm.py --epochs 50 --batch 4
+
+# Should work without "Label class 6 exceeds" error ✅
+
+═══════════════════════════════════════════════════════════════════════
+
+📋 COMPLETE COMMAND SEQUENCE (Copy & Paste)
+
+cd /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm
+conda activate yolov11-wildlife
+rm -rf ../general_dataset/labels/ ../general_dataset/images/
+python convert_csv_to_yolo.py
+python reorganize_to_yolo_structure.py
+head -n 3 ../general_dataset/labels/train/*.txt | head -20
+python train_vm.py --epochs 50 --batch 4
+
+═══════════════════════════════════════════════════════════════════════
+
+🔍 HOW TO VERIFY IT'S FIXED
+
+1. Check label file content:
+   cat ../general_dataset/labels/train/IMG_001.txt
+   
+   CORRECT ✅:
+   0 0.523400 0.612300 0.123400 0.098700
+   1 0.234100 0.345600 0.087600 0.112300
+   
+   WRONG ❌:
+   1 0.523400 0.612300 0.123400 0.098700
+   2 0.234100 0.345600 0.087600 0.112300
+
+2. Check all unique class IDs in labels:
+   cat ../general_dataset/labels/train/*.txt | cut -d' ' -f1 | sort -u
+   
+   CORRECT ✅:
+   0
+   1
+   2
+   3
+   4
+   5
+   
+   WRONG ❌:
+   1
+   2
+   3
+   4
+   5
+   6
+
+3. Training starts without error ✅
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 CLASS MAPPING REFERENCE
+
+CSV File Label → YOLO Class ID → Species Name
+      1        →       0        → Buffalo
+      2        →       1        → Elephant
+      3        →       2        → Kudu
+      4        →       3        → Topi
+      5        →       4        → Warthog
+      6        →       5        → Waterbuck
+
+═══════════════════════════════════════════════════════════════════════
+
+⚠️ IMPORTANT NOTES
+
+1. YOLO ALWAYS uses 0-indexed class IDs (starting from 0)
+   - This is a fundamental YOLO requirement
+   - Cannot be changed or worked around
+   - Your CSV has 1-indexed labels, so we subtract 1
+
+2. CLASS_NAMES in train_vm.py MUST match:
+   ✅ CORRECT:
+   CLASS_NAMES = {
+       0: "Buffalo",
+       1: "Elephant",
+       ...
+       5: "Waterbuck"
+   }
+   
+   ❌ WRONG:
+   CLASS_NAMES = {
+       1: "Buffalo",
+       2: "Elephant",
+       ...
+       6: "Waterbuck"
+   }
+
+3. Label files (.txt) MUST contain class IDs 0-5
+   - NOT 1-6
+   - The conversion script now handles this automatically
+
+4. You MUST re-run conversion after the fix
+   - Old label files have wrong class IDs
+   - New conversion creates correct 0-5 class IDs
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 EXPECTED RESULT
+
+After following these steps:
+
+✅ Label files contain class IDs 0-5
+✅ CLASS_NAMES in train_vm.py uses keys 0-5
+✅ Training starts without "Label class 6 exceeds" error
+✅ YOLO can correctly map predictions to species names
+
+═══════════════════════════════════════════════════════════════════════
+
+📚 MORE INFO
+
+See also:
+  - COMPLETE_SETUP_GUIDE.md - Full setup guide
+  - STRUCTURE_ERROR_FIX.txt - Path/structure issues
+  - QUICK_START.txt - Quick reference
+
+═══════════════════════════════════════════════════════════════════════
+
+Status: ✅ FIXED - Ready to re-run conversion
+Last Updated: 2025-11-20
+
+═══════════════════════════════════════════════════════════════════════
+

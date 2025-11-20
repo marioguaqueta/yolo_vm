@@ -1,0 +1,80 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║                    QUICK FIX: Class ID Error                          ║
+║          "Label class 6 exceeds dataset class count 6"                ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+🔴 THE PROBLEM:
+
+  CSV labels: 1, 2, 3, 4, 5, 6  ❌ (starts at 1)
+  YOLO needs: 0, 1, 2, 3, 4, 5  ✅ (starts at 0)
+
+  Your old label files have class 6, but YOLO expects max class 5!
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ THE FIX (Copy & Paste on VM):
+
+cd /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm
+conda activate yolov11-wildlife
+
+# Delete old labels (wrong class IDs)
+rm -rf ../general_dataset/labels/
+rm -rf ../general_dataset/images/
+
+# Re-create labels (correct class IDs: 0-5)
+python convert_csv_to_yolo.py
+
+# Reorganize structure
+python reorganize_to_yolo_structure.py
+
+# Verify (should show 0-5, NOT 1-6)
+cat ../general_dataset/labels/train/*.txt | cut -d' ' -f1 | sort -u
+
+# Train!
+python train_vm.py --epochs 50 --batch 4
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 WHAT CHANGED:
+
+  CSV to YOLO Conversion:
+  
+  CSV    YOLO     Species
+  ─────────────────────────
+   1  →   0      Buffalo
+   2  →   1      Elephant
+   3  →   2      Kudu
+   4  →   3      Topi
+   5  →   4      Warthog
+   6  →   5      Waterbuck
+
+  The script now SUBTRACTS 1 from CSV labels automatically!
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ VERIFICATION:
+
+  BEFORE (Wrong):
+    $ cat label.txt
+    1 0.5 0.5 0.1 0.1  ❌ Class 1
+    6 0.3 0.3 0.1 0.1  ❌ Class 6 (exceeds max!)
+
+  AFTER (Correct):
+    $ cat label.txt
+    0 0.5 0.5 0.1 0.1  ✅ Class 0
+    5 0.3 0.3 0.1 0.1  ✅ Class 5 (max allowed)
+
+═══════════════════════════════════════════════════════════════════════
+
+⚠️ REMEMBER:
+
+  • YOLO is ALWAYS 0-indexed (0, 1, 2, ...)
+  • Never change CLASS_NAMES back to 1-6!
+  • Re-run conversion after script updates
+
+═══════════════════════════════════════════════════════════════════════
+
+📚 Full details: CLASS_ID_FIX.txt
+
+═══════════════════════════════════════════════════════════════════════
+
