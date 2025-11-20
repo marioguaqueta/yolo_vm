@@ -1,0 +1,253 @@
+================================================================================
+ 🐍 CONDA QUICK REFERENCE - YOLOv11 Wildlife Detection
+================================================================================
+
+📦 FILES FOR CONDA SETUP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+environment.yml              Conda environment specification
+setup_conda_and_train.sh     One-command setup script
+CONDA_SETUP.md               Complete conda guide
+
+================================================================================
+ ⚡ QUICK SETUP (ONE COMMAND)
+================================================================================
+
+./setup_conda_and_train.sh
+
+This will:
+  1. Create conda environment from environment.yml
+  2. Install PyTorch with GPU support (CUDA 11.8)
+  3. Install YOLOv11 and all dependencies
+  4. Setup wandb for experiment tracking
+  5. Start training automatically
+
+================================================================================
+ 🔧 MANUAL SETUP
+================================================================================
+
+# Step 1: Create environment
+conda env create -f environment.yml
+
+# Step 2: Activate environment
+conda activate yolov11-wildlife
+
+# Step 3: Verify installation
+python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
+
+# Step 4: Login to wandb (optional)
+wandb login
+
+# Step 5: Start training
+python train_yolov11_wildlife.py
+
+================================================================================
+ 📝 ENVIRONMENT.YML CONTENTS
+================================================================================
+
+name: yolov11-wildlife
+
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.10
+  - pytorch>=2.0.0
+  - torchvision>=0.15.0
+  - pytorch-cuda=11.8        # For GPU support
+  - pandas
+  - numpy
+  - pillow
+  - opencv
+  - matplotlib
+  - seaborn
+  - tqdm
+  
+  - pip:
+    - ultralytics>=8.0.0
+    - wandb>=0.15.0
+
+================================================================================
+ 🎯 COMMON COMMANDS
+================================================================================
+
+# Create environment
+conda env create -f environment.yml
+
+# Activate environment
+conda activate yolov11-wildlife
+
+# Deactivate environment
+conda deactivate
+
+# Update environment
+conda env update -f environment.yml --prune
+
+# List all environments
+conda env list
+
+# Remove environment
+conda env remove -n yolov11-wildlife
+
+# Export environment (exact versions)
+conda env export > environment_exact.yml
+
+================================================================================
+ 🖥️ GPU CONFIGURATION
+================================================================================
+
+DEFAULT (CUDA 11.8):
+  - pytorch-cuda=11.8
+
+FOR CUDA 12.1:
+  Edit environment.yml, change to:
+  - pytorch-cuda=12.1
+
+FOR CPU ONLY:
+  Edit environment.yml, replace:
+  - pytorch>=2.0.0
+  - torchvision>=0.15.0
+  - pytorch-cuda=11.8
+  
+  With:
+  - pytorch>=2.0.0
+  - torchvision>=0.15.0
+  - cpuonly
+
+Check your CUDA version:
+  nvidia-smi
+
+================================================================================
+ 🚀 TRAINING WITH CONDA
+================================================================================
+
+# Basic training
+conda activate yolov11-wildlife
+python train_yolov11_wildlife.py
+
+# Custom parameters
+conda activate yolov11-wildlife
+python train_yolov11_wildlife.py --epochs 100 --batch 8 --imgsz 2048
+
+# Using setup script (does everything)
+./setup_conda_and_train.sh --epochs 50 --batch 8
+
+# Without wandb
+./setup_conda_and_train.sh --no-wandb
+
+================================================================================
+ 🐛 TROUBLESHOOTING
+================================================================================
+
+ISSUE: conda command not found
+FIX: 
+  # Mac/Linux
+  export PATH="$HOME/miniconda3/bin:$PATH"
+  source ~/.bashrc
+  
+  # Windows
+  Use Anaconda Prompt
+
+ISSUE: Environment creation is slow
+FIX:
+  # Install mamba (faster)
+  conda install mamba -n base -c conda-forge
+  mamba env create -f environment.yml
+
+ISSUE: GPU not detected
+FIX:
+  # Check CUDA version
+  nvidia-smi
+  
+  # Reinstall PyTorch with correct CUDA
+  conda activate yolov11-wildlife
+  conda install pytorch torchvision pytorch-cuda=11.8 -c pytorch -c nvidia
+
+ISSUE: PackagesNotFoundError
+FIX:
+  conda config --add channels conda-forge
+  conda config --add channels pytorch
+
+================================================================================
+ ✅ CONDA VS PIP COMPARISON
+================================================================================
+
+USE CONDA IF:
+  ✓ You need GPU support (easier CUDA setup)
+  ✓ You use scientific packages (NumPy, SciPy, etc.)
+  ✓ You want system-level dependency management
+  ✓ You prefer comprehensive environment isolation
+
+USE PIP (venv) IF:
+  ✓ You prefer lightweight setup
+  ✓ You already have CUDA configured manually
+  ✓ You want faster environment creation
+  ✓ You're on a system with limited resources
+
+BOTH ARE SUPPORTED:
+  - Conda: environment.yml + setup_conda_and_train.sh
+  - Pip:   requirements.txt + setup_and_train.sh
+
+================================================================================
+ 📚 ADDITIONAL RESOURCES
+================================================================================
+
+Complete Guide:      CONDA_SETUP.md
+Training Guide:      README_TRAINING.md
+Quick Start:         QUICKSTART.md
+Usage Instructions:  USAGE_GUIDE.txt
+
+Conda Documentation: https://docs.conda.io/
+PyTorch Install:     https://pytorch.org/get-started/locally/
+
+================================================================================
+ 🎓 BEST PRACTICES
+================================================================================
+
+1. Always activate before working:
+   conda activate yolov11-wildlife
+
+2. Keep environment.yml in version control (already included)
+
+3. Share environment.yml with team for reproducibility
+
+4. Use separate environments for different projects
+
+5. Update regularly:
+   conda update --all
+
+6. Test GPU after installation:
+   python -c "import torch; print(torch.cuda.is_available())"
+
+================================================================================
+ 🔄 WORKFLOW EXAMPLE
+================================================================================
+
+# First time setup
+./setup_conda_and_train.sh
+
+# Future sessions
+conda activate yolov11-wildlife
+python train_yolov11_wildlife.py --epochs 100
+
+# When done
+conda deactivate
+
+# Share with team
+git add environment.yml
+git commit -m "Add conda environment"
+git push
+
+# Team member recreates environment
+git pull
+conda env create -f environment.yml
+conda activate yolov11-wildlife
+
+================================================================================
+
+                    Quick Start: ./setup_conda_and_train.sh
+
+================================================================================
+

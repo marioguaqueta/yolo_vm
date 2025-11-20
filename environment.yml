@@ -1,0 +1,53 @@
+name: yolov11-wildlife
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+
+dependencies:
+  # Python version
+  - python=3.10
+  
+  # PyTorch and CUDA (adjust cuda version based on your GPU)
+  # For CUDA 11.8 (most common)
+  - pytorch>=2.0.0
+  - torchvision>=0.15.0
+  - pytorch-cuda=11.8
+  
+  # For CPU only, comment above 3 lines and uncomment below:
+  # - pytorch>=2.0.0
+  # - torchvision>=0.15.0
+  # - cpuonly
+  
+  # Data Science & Processing
+  - pandas>=1.5.0
+  - numpy>=1.21.0
+  - pillow>=9.0.0
+  - opencv>=4.7.0
+  
+  # Configuration
+  - pyyaml>=6.0
+  
+  # Visualization
+  - matplotlib>=3.5.0
+  - seaborn>=0.12.0
+  
+  # Utils
+  - tqdm>=4.65.0
+  
+  # Development tools (optional)
+  - ipython
+  - jupyter
+  
+  # Pip dependencies (packages better installed via pip)
+  - pip
+  - pip:
+    # YOLOv11 (Ultralytics)
+    - ultralytics>=8.0.0
+    
+    # Experiment Tracking
+    - wandb>=0.15.0
+    
+    # Additional utilities
+    - opencv-python>=4.7.0
+

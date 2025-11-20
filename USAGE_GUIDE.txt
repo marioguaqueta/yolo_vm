@@ -1,0 +1,344 @@
+================================================================================
+ YOLOv11 WILDLIFE DETECTION - COMPLETE USAGE GUIDE
+ Project: Guacamaya - Microsoft AI for Good Lab
+================================================================================
+
+📁 FILES CREATED (13 files)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ train_yolov11_wildlife.py    Main training script (local/desktop)
+✅ train_vm.py                  Cloud/VM optimized training script  
+✅ test_setup.py                Setup verification tool
+✅ setup_and_train.sh           One-command setup script (pip/venv)
+✅ setup_conda_and_train.sh     One-command setup script (conda)
+✅ colab_setup.py               Google Colab notebook code
+✅ requirements.txt             Python dependencies (pip)
+✅ environment.yml              Conda environment specification
+✅ README_TRAINING.md           Complete documentation
+✅ QUICKSTART.md                Quick reference guide
+✅ CONDA_SETUP.md               Conda-specific guide
+✅ PROJECT_SUMMARY.md           Project overview
+✅ USAGE_GUIDE.txt              This file
+
+================================================================================
+ 🚀 QUICK START - CHOOSE YOUR ENVIRONMENT
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ OPTION 1A: LOCAL MACHINE - Conda (Recommended for GPU)                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Step 1: One-command setup with Conda
+  $ ./setup_conda_and_train.sh
+
+Or manually:
+  $ conda env create -f environment.yml
+  $ conda activate yolov11-wildlife
+  $ python train_yolov11_wildlife.py
+
+Benefits:
+  ✓ Automatic GPU/CUDA configuration
+  ✓ Better dependency management
+  ✓ Isolated environment
+
+See CONDA_SETUP.md for detailed conda instructions
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ OPTION 1B: LOCAL MACHINE - Pip/venv (Lighter alternative)                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Step 1: Test your setup
+  $ ./test_setup.py
+
+Step 2: Start training (automatic setup)
+  $ ./setup_and_train.sh
+
+Step 3: Monitor training
+  - Open: https://wandb.ai/your-username/yolov11-wildlife-detection
+  - Check: runs/yolov11_wildlife/
+
+Custom parameters:
+  $ ./setup_and_train.sh --epochs 100 --batch 8 --imgsz 1024
+
+Without wandb:
+  $ ./setup_and_train.sh --no-wandb
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ OPTION 2: GOOGLE COLAB (Free GPU)                                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Step 1: Upload dataset to Google Drive
+  MyDrive/MAIA_Final_Project_2025/Yolo/general_dataset/
+
+Step 2: Create new Colab notebook
+  https://colab.research.google.com/
+
+Step 3: Copy cells from colab_setup.py
+
+Step 4: Update PROJECT_PATH in the notebook
+  PROJECT_PATH = "/content/drive/MyDrive/MAIA_Final_Project_2025/Yolo"
+
+Step 5: Run all cells
+  - Training starts automatically
+  - Results saved in Google Drive
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ OPTION 3: CLOUD VM (AWS/Azure/GCP)                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Step 1: SSH into your VM
+  $ ssh user@vm-ip
+
+Step 2: Upload files to VM
+  $ scp -r * user@vm-ip:/mnt/data/Yolo/
+
+Step 3: Install dependencies
+  $ pip install -r requirements.txt
+
+Step 4: Update path in train_vm.py
+  BASE_DIR = Path("/mnt/data/Yolo")  # Your actual path
+
+Step 5: Login to wandb
+  $ wandb login YOUR_API_KEY
+
+Step 6: Run training in background
+  $ nohup python train_vm.py --epochs 50 --batch 8 > training.log 2>&1 &
+
+Step 7: Monitor progress
+  $ tail -f training.log
+
+================================================================================
+ ⚙️ CONFIGURATION & PARAMETERS
+================================================================================
+
+Default Settings:
+  Model:       yolo11s.pt (YOLOv11 small)
+  Epochs:      50
+  Batch Size:  4-8 (auto-adjusted for GPU)
+  Image Size:  2048 pixels (high-res for aerial images)
+  Patience:    10 (early stopping)
+  Device:      Auto-detect (GPU if available)
+
+Command Line Arguments:
+  --epochs N       Number of training epochs (default: 50)
+  --batch N        Batch size (default: 4)
+  --imgsz N        Image size in pixels (default: 2048)
+  --no-wandb       Disable wandb logging
+  --skip-conversion  Skip CSV to YOLO conversion
+  --wandb-key KEY  Wandb API key (for automation)
+
+Examples:
+  # Train for 100 epochs with larger batch
+  python train_yolov11_wildlife.py --epochs 100 --batch 8
+  
+  # Train with smaller images (faster, less memory)
+  python train_yolov11_wildlife.py --imgsz 1024 --batch 16
+  
+  # Train without wandb
+  python train_yolov11_wildlife.py --no-wandb
+  
+  # Resume training (skip data conversion)
+  python train_yolov11_wildlife.py --skip-conversion
+
+================================================================================
+ 📊 DATASET & CLASSES
+================================================================================
+
+Dataset: DelPlan 2022 Aerial Wildlife Survey
+  - Train: 928 images
+  - Val:   111 images  
+  - Test:  258 images
+  - Total: 1,297 high-resolution images (5000×4000 pixels)
+
+Classes (6 species):
+  0: Buffalo (Bovines)
+  1: Elephant
+  2: Kudu
+  3: Topi
+  4: Warthog
+  5: Waterbuck
+
+Data Format:
+  Input:  CSV with bounding boxes (x1, y1, x2, y2, label)
+  Output: YOLO format (class x_center y_center width height)
+
+================================================================================
+ 📈 EXPECTED RESULTS & TRAINING TIME
+================================================================================
+
+Performance Targets (mAP@50):
+  Overall:     ~60%
+  Elephant:    ~80%  (Excellent)
+  Kudu:        ~77%  (Excellent)
+  Buffalo:     ~65%  (Good)
+  Waterbuck:   ~40%  (Fair)
+  Warthog:     ~29%  (Challenging - few samples)
+
+Training Time Estimates (50 epochs):
+  Google Colab T4:        3-4 hours
+  RTX 3090 (24GB):        2-3 hours
+  AWS p3.2xlarge (V100):  2.5-3.5 hours
+  CPU only:               30-40 hours ⚠️ (not recommended)
+
+================================================================================
+ 🔍 MONITORING & RESULTS
+================================================================================
+
+Weights & Biases Dashboard:
+  URL: https://wandb.ai/your-username/yolov11-wildlife-detection
+  
+  Metrics tracked:
+    - Training/Validation Loss
+    - mAP@0.5 and mAP@0.5:0.95
+    - Precision & Recall (overall and per-class)
+    - Learning rate
+    - GPU utilization
+    - Training curves
+    - Confusion matrix
+
+Local Results:
+  Location: runs/yolov11_wildlife/
+  
+  Files:
+    weights/best.pt          ← Use this model for inference
+    weights/last.pt          ← Resume training from here
+    results.csv              ← Training metrics
+    confusion_matrix.png     ← Per-class performance
+    F1_curve.png            ← F1 scores
+    PR_curve.png            ← Precision-Recall curves
+    results.png             ← Training curves
+    val_batch*.jpg          ← Sample predictions
+
+================================================================================
+ 🐛 TROUBLESHOOTING
+================================================================================
+
+Problem: Out of Memory (OOM) Error
+Solution: Reduce batch size or image size
+  $ python train_yolov11_wildlife.py --batch 2 --imgsz 1024
+
+Problem: Training very slow
+Solution: Check if GPU is being used
+  $ python -c "import torch; print(torch.cuda.is_available())"
+  If False, use Google Colab or cloud GPU
+
+Problem: Wandb login fails
+Solution: Train without wandb or use API key
+  $ python train_yolov11_wildlife.py --no-wandb
+  Or:
+  $ export WANDB_API_KEY=your_key
+  $ python train_yolov11_wildlife.py
+
+Problem: Dataset not found
+Solution: Update BASE_DIR in the training script
+  Edit train_yolov11_wildlife.py:
+    BASE_DIR = Path("/your/actual/path/to/Yolo")
+
+Problem: Missing dependencies
+Solution: Install requirements
+  $ pip install -r requirements.txt
+
+Problem: Permission denied
+Solution: Make scripts executable
+  $ chmod +x setup_and_train.sh train_yolov11_wildlife.py test_setup.py
+
+================================================================================
+ 🎯 AFTER TRAINING - USING YOUR MODEL
+================================================================================
+
+1. VALIDATE MODEL
+  from ultralytics import YOLO
+  model = YOLO('runs/yolov11_wildlife/weights/best.pt')
+  results = model.val(data='yolo_wildlife_dataset/data.yaml')
+
+2. RUN INFERENCE ON NEW IMAGES
+  model = YOLO('runs/yolov11_wildlife/weights/best.pt')
+  
+  # Single image
+  results = model.predict('image.jpg', imgsz=2048, conf=0.25)
+  
+  # Batch prediction
+  results = model.predict('images_folder/', imgsz=2048, save=True)
+
+3. EXPORT MODEL FOR DEPLOYMENT
+  model = YOLO('runs/yolov11_wildlife/weights/best.pt')
+  
+  # ONNX format (portable)
+  model.export(format='onnx')
+  
+  # TensorRT (NVIDIA GPUs)
+  model.export(format='engine')
+
+================================================================================
+ 📞 SUPPORT & DOCUMENTATION
+================================================================================
+
+Documentation:
+  📖 Full guide:      README_TRAINING.md
+  ⚡ Quick start:     QUICKSTART.md
+  📋 Project info:    PROJECT_SUMMARY.md
+  📄 This guide:      USAGE_GUIDE.txt
+
+Testing:
+  🔍 Test setup before training:
+    $ ./test_setup.py
+
+Project Team:
+  - Jorge Mario Guaquetá
+  - Daniel Santiago Trujillo
+  - Inmaculada Concepción Rondón
+  - Daniela Alexandra Ortiz Santacruz
+
+Institutions:
+  - Microsoft AI for Good Lab
+  - Centro SINFONÍA - Universidad de los Andes
+  - Instituto Sinchi
+  - Instituto Alexander von Humboldt
+
+================================================================================
+ ✅ CHECKLIST - BEFORE YOU START TRAINING
+================================================================================
+
+□ Dataset is in the correct location
+    Location: general_dataset/
+    Contains: train/, val/, test/ folders
+    Contains: groundtruth/csv/ annotation files
+
+□ Python 3.8+ is installed
+    Check: python3 --version
+
+□ GPU is available (highly recommended)
+    Check: python -c "import torch; print(torch.cuda.is_available())"
+
+□ Sufficient disk space (20GB+ free)
+    Check: df -h
+
+□ Dependencies are installed
+    Run: pip install -r requirements.txt
+
+□ Wandb account created (optional but recommended)
+    Sign up: https://wandb.ai/site
+    Login: wandb login
+
+□ Setup verified
+    Run: ./test_setup.py
+
+================================================================================
+
+🚀 READY TO START TRAINING?
+
+  RECOMMENDED COMMAND:
+  
+    ./test_setup.py           # Verify everything first
+    ./setup_and_train.sh      # Start training
+  
+  OR MANUALLY:
+  
+    python train_yolov11_wildlife.py --epochs 50 --batch 8 --imgsz 2048
+
+================================================================================
+
+                      Good luck with your training! 🦒🐘🦌
+
+================================================================================
+

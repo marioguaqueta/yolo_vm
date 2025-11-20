@@ -1,0 +1,281 @@
+================================================================================
+ YOLOV11 WILDLIFE DETECTION - PROJECT FILE STRUCTURE
+================================================================================
+
+Yolo/
+│
+├── 📝 TRAINING SCRIPTS (Executable)
+│   ├── train_yolov11_wildlife.py *     Main training script (local/desktop)
+│   ├── train_vm.py *                   Cloud/VM optimized version
+│   ├── test_setup.py *                 Setup verification tool
+│   └── setup_and_train.sh *            One-command setup (Mac/Linux)
+│
+├── 🐍 SETUP & HELPER SCRIPTS
+│   ├── colab_setup.py                  Google Colab notebook cells
+│   └── requirements.txt                Python dependencies
+│
+├── 📚 DOCUMENTATION
+│   ├── README_TRAINING.md              Complete training guide
+│   ├── QUICKSTART.md                   Quick reference
+│   ├── PROJECT_SUMMARY.md              Project overview
+│   ├── USAGE_GUIDE.txt                 Detailed usage instructions
+│   └── FILE_STRUCTURE.txt              This file
+│
+├── 📓 ORIGINAL NOTEBOOK
+│   └── Entregable Proyecto.ipynb       Original research notebook
+│
+├── 📁 DATASET (Your existing data)
+│   └── general_dataset/
+│       ├── train/                      928 training images
+│       ├── val/                        111 validation images
+│       ├── test/                       258 test images
+│       └── groundtruth/
+│           └── csv/
+│               ├── train_big_size_A_B_E_K_WH_WB.csv
+│               ├── val_big_size_A_B_E_K_WH_WB.csv
+│               └── test_big_size_A_B_E_K_WH_WB.csv
+│
+└── 📂 OUTPUT (Created after training)
+    ├── yolo_wildlife_dataset/          Converted YOLO format dataset
+    │   ├── train/
+    │   │   ├── images/
+    │   │   └── labels/
+    │   ├── val/
+    │   │   ├── images/
+    │   │   └── labels/
+    │   ├── test/
+    │   │   ├── images/
+    │   │   └── labels/
+    │   └── data.yaml                   YOLO dataset config
+    │
+    └── runs/
+        └── yolov11_wildlife/           Training results
+            ├── weights/
+            │   ├── best.pt             ← Best model (use this!)
+            │   └── last.pt             ← Resume training
+            ├── results.csv
+            ├── confusion_matrix.png
+            ├── F1_curve.png
+            ├── PR_curve.png
+            └── val_batch*.jpg
+
+================================================================================
+ 📊 FILE DETAILS
+================================================================================
+
+TRAINING SCRIPTS (10 files total)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+train_yolov11_wildlife.py (15 KB) *executable*
+  ✓ Main training pipeline
+  ✓ CSV to YOLO format conversion
+  ✓ Full training loop with YOLOv11
+  ✓ Wandb integration
+  ✓ Validation and metrics
+  ✓ GPU/CPU auto-detection
+  
+  Usage: python train_yolov11_wildlife.py [--epochs N] [--batch N] [--imgsz N]
+
+train_vm.py (17 KB) *executable*
+  ✓ Cloud/VM optimized version
+  ✓ Google Colab detection
+  ✓ Progress bars for long operations
+  ✓ Auto-configured for cloud GPUs
+  ✓ Higher batch sizes
+  
+  Usage: python train_vm.py [--epochs N] [--batch N] [--imgsz N]
+
+test_setup.py (9.1 KB) *executable*
+  ✓ Comprehensive setup verification
+  ✓ Python version check
+  ✓ Dependencies verification
+  ✓ GPU availability test
+  ✓ Dataset structure validation
+  ✓ Wandb login check
+  ✓ Disk space verification
+  
+  Usage: ./test_setup.py
+
+setup_and_train.sh (1.9 KB) *executable*
+  ✓ One-command setup and training
+  ✓ Creates virtual environment
+  ✓ Installs dependencies
+  ✓ Configures wandb
+  ✓ Starts training
+  
+  Usage: ./setup_and_train.sh [--epochs N] [--batch N]
+
+colab_setup.py (5.4 KB)
+  ✓ Ready-to-use Google Colab cells
+  ✓ Google Drive mounting
+  ✓ Environment detection
+  ✓ Dataset verification
+  ✓ One-click training
+  
+  Usage: Copy cells into Colab notebook
+
+requirements.txt (374 B)
+  ✓ All Python dependencies
+  ✓ PyTorch and YOLOv11
+  ✓ Wandb for tracking
+  ✓ Data processing libraries
+  
+  Usage: pip install -r requirements.txt
+
+DOCUMENTATION (4 files)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+README_TRAINING.md (7.3 KB)
+  📖 Comprehensive training guide
+  📖 Installation instructions
+  📖 Cloud deployment guides
+  📖 Troubleshooting section
+  📖 Advanced usage examples
+
+QUICKSTART.md (6.3 KB)
+  ⚡ Quick reference for all environments
+  ⚡ Local/Colab/VM instructions
+  ⚡ Common parameters
+  ⚡ Training time estimates
+  ⚡ Troubleshooting quick fixes
+
+PROJECT_SUMMARY.md (8.3 KB)
+  📋 Complete project overview
+  📋 Key features list
+  📋 Training workflow
+  📋 Dataset information
+  📋 Expected results
+
+USAGE_GUIDE.txt (11 KB)
+  📄 Detailed step-by-step guide
+  📄 Configuration reference
+  📄 Monitoring instructions
+  📄 After-training usage
+  📄 Complete troubleshooting
+
+================================================================================
+ 🚀 GETTING STARTED
+================================================================================
+
+STEP 1: Verify Setup
+  $ ./test_setup.py
+
+STEP 2: Choose Your Method
+
+  METHOD A: One-Command (Recommended)
+    $ ./setup_and_train.sh
+  
+  METHOD B: Manual
+    $ pip install -r requirements.txt
+    $ wandb login
+    $ python train_yolov11_wildlife.py
+  
+  METHOD C: Google Colab
+    - Open colab_setup.py
+    - Copy cells to Colab
+    - Run all cells
+
+STEP 3: Monitor Training
+  - Wandb: https://wandb.ai/your-username/yolov11-wildlife-detection
+  - Local: runs/yolov11_wildlife/
+
+STEP 4: Use Trained Model
+  Best model: runs/yolov11_wildlife/weights/best.pt
+
+================================================================================
+ 📦 DATASET FORMAT
+================================================================================
+
+INPUT (Your existing data):
+  - CSV files with bounding boxes
+  - Format: Image, x1, y1, x2, y2, Label
+  - Classes: 0-5 (Buffalo, Elephant, Kudu, Topi, Warthog, Waterbuck)
+
+OUTPUT (Auto-generated):
+  - YOLO format text files
+  - Format: class x_center y_center width height
+  - All coordinates normalized [0, 1]
+  - Automatic conversion by training scripts
+
+================================================================================
+ 🎯 TRAINING CONFIGURATION
+================================================================================
+
+Default Settings:
+  Model:       yolo11s.pt (YOLOv11 small)
+  Epochs:      50
+  Batch Size:  4-8 (auto-adjusted)
+  Image Size:  2048 pixels (for aerial wildlife)
+  Patience:    10 epochs (early stopping)
+  Device:      Auto-detect (GPU preferred)
+
+Classes (6 species):
+  0: Buffalo      (Bovines)
+  1: Elephant     (Large mammals)
+  2: Kudu         (Antelopes)
+  3: Topi         (Antelopes)
+  4: Warthog      (Small mammals)
+  5: Waterbuck    (Antelopes)
+
+================================================================================
+ 📈 EXPECTED OUTPUTS
+================================================================================
+
+After Training Complete:
+
+1. YOLO Dataset (yolo_wildlife_dataset/)
+   ✓ Converted images and labels
+   ✓ data.yaml configuration
+   ✓ Train/val/test splits
+
+2. Trained Models (runs/yolov11_wildlife/weights/)
+   ✓ best.pt - Best performing model
+   ✓ last.pt - Latest checkpoint
+
+3. Metrics & Plots (runs/yolov11_wildlife/)
+   ✓ results.csv - All training metrics
+   ✓ confusion_matrix.png
+   ✓ F1_curve.png
+   ✓ PR_curve.png
+   ✓ results.png - Training curves
+
+4. Wandb Dashboard (online)
+   ✓ Real-time training metrics
+   ✓ Per-class performance
+   ✓ System monitoring
+   ✓ Model artifacts
+
+================================================================================
+ 💡 TIPS
+================================================================================
+
+✓ Always run test_setup.py first to verify configuration
+✓ Use high resolution (2048px) for aerial images with small animals
+✓ Monitor wandb dashboard for real-time progress
+✓ Reduce batch size if you get Out of Memory errors
+✓ Training stops automatically when no improvement (early stopping)
+✓ Models saved every 5 epochs as checkpoints
+✓ Use GPU for reasonable training times (3-4 hours vs 30-40 hours on CPU)
+
+================================================================================
+ 🆘 NEED HELP?
+================================================================================
+
+1. Read the guides:
+   - QUICKSTART.md for fast reference
+   - README_TRAINING.md for complete documentation
+   - USAGE_GUIDE.txt for detailed instructions
+
+2. Test your setup:
+   $ ./test_setup.py
+
+3. Check wandb dashboard for training issues
+
+4. Contact project team (see PROJECT_SUMMARY.md)
+
+================================================================================
+
+                    Ready to train? Run: ./test_setup.py
+
+================================================================================
+
