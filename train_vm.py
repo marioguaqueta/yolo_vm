@@ -25,7 +25,9 @@ class Config:
     # Paths - Using relative paths
     # Code structure: parent_dir/yolo_vm/ (code) and parent_dir/general_dataset/ (data)
     BASE_DIR = Path(__file__).parent.absolute()  # yolo_vm directory
+    print(f"BASE_DIR: {BASE_DIR}")
     DATASET_ROOT = BASE_DIR.parent / "general_dataset"  # sibling directory
+    print(f"DATASET_ROOT: {DATASET_ROOT}")
     
     # For Universidad de los Andes VM:
     # /home/estudiantes/grupo_12/sahariandataset/
@@ -37,8 +39,11 @@ class Config:
     
     # Dataset paths
     IMAGES_TRAIN = DATASET_ROOT / "train"
+    print(f"IMAGES_TRAIN: {IMAGES_TRAIN}")
     IMAGES_VAL = DATASET_ROOT / "val"
+    print(f"IMAGES_VAL: {IMAGES_VAL}")
     IMAGES_TEST = DATASET_ROOT / "test"
+    print(f"IMAGES_TEST: {IMAGES_TEST}")
     
     # Class mapping
     CLASS_NAMES = {

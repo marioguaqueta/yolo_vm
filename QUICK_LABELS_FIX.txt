@@ -1,0 +1,242 @@
+================================================================================
+ 🏷️  MISSING YOLO LABELS - QUICK FIX
+================================================================================
+
+PROBLEM: CSV annotations exist, but YOLO label files (.txt) don't exist
+
+================================================================================
+ ⚡ SOLUTION (2 steps)
+================================================================================
+
+STEP 1: Convert CSV to YOLO format
+  cd /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm
+  python convert_csv_to_yolo.py
+
+STEP 2: Train
+  python train_vm.py --epochs 50 --batch 4
+
+================================================================================
+ 📁 WHAT'S HAPPENING
+================================================================================
+
+YOUR DATA (CSV annotations):
+  general_dataset/
+  ├── train/              ← Images only, no labels
+  ├── val/                ← Images only, no labels
+  └── groundtruth/csv/    ← Annotations in CSV format
+      └── train_big_size_A_B_E_K_WH_WB.csv
+
+YOLO NEEDS (TXT labels):
+  general_dataset/
+  ├── train/
+  │   └── labels/         ← Need .txt files here!
+  ├── val/
+  │   └── labels/         ← Need .txt files here!
+  └── test/
+      └── labels/         ← Need .txt files here!
+
+CONVERSION SCRIPT creates the labels/ folders and .txt files
+
+================================================================================
+ 🚨 IMPORTANT: Check Your Class Labels
+================================================================================
+
+YOU CHANGED CLASS_NAMES to start from 1:
+  CLASS_NAMES = {
+      1: "Buffalo",      ← Starts at 1
+      2: "Elephant",
+      ...
+      6: "Waterbuck"
+  }
+
+BUT YOLO expects classes starting from 0!
+
+CHECK YOUR CSV LABELS:
+  cd ../general_dataset/groundtruth/csv
+  cat train_big_size_A_B_E_K_WH_WB.csv | cut -d',' -f6 | sort -u
+
+IF OUTPUT IS:  0, 1, 2, 3, 4, 5
+  → CHANGE CLASS_NAMES to start from 0:
+    CLASS_NAMES = {
+        0: "Buffalo",    ← Start from 0
+        1: "Elephant",
+        ...
+        5: "Waterbuck"
+    }
+
+IF OUTPUT IS:  1, 2, 3, 4, 5, 6
+  → Labels need to be converted to 0-5 during conversion
+    Edit convert_csv_to_yolo.py line 73:
+    class_id = int(row['Label']) - 1  # Subtract 1
+
+================================================================================
+ 📌 ALSO: Check Your Model Choice
+================================================================================
+
+YOU CHANGED TO: MODEL = "yolo11x-obb.pt"
+
+This is for Oriented Bounding Boxes (rotated rectangles)
+Your CSV has regular bounding boxes (x1, y1, x2, y2)
+
+RECOMMENDATION:
+  MODEL = "yolo11s.pt"   # Small (9M params, fast)
+  # or
+  MODEL = "yolo11m.pt"   # Medium (20M params, balanced)
+  # or
+  MODEL = "yolo11x.pt"   # Extra large (56M params, slow but accurate)
+
+NOT OBB unless you have rotation angle data:
+  # MODEL = "yolo11x-obb.pt"  # For rotated boxes only
+
+================================================================================
+ ✅ COMPLETE FIX
+================================================================================
+
+1. CHECK LABEL RANGE
+   cd /home/estudiante/grupo_12/subsaharian_dataset/general_dataset/groundtruth/csv
+   head -20 train_big_size_A_B_E_K_WH_WB.csv
+   # Look at the Label column - is it 0-5 or 1-6?
+
+2. FIX train_vm.py
+   cd ../../yolo_vm
+   nano train_vm.py  # or vim or your editor
+   
+   # Fix CLASS_NAMES (line ~38):
+   CLASS_NAMES = {
+       0: "Buffalo",    # Start from 0, not 1
+       1: "Elephant", 
+       2: "Kudu",
+       3: "Topi",
+       4: "Warthog",
+       5: "Waterbuck"
+   }
+   
+   # Fix MODEL (line ~51):
+   MODEL = "yolo11s.pt"  # Not yolo11x-obb.pt
+
+3. CONVERT CSV TO YOLO
+   python convert_csv_to_yolo.py
+   
+   # This creates labels/ folders with .txt files
+
+4. VERIFY CONVERSION
+   ls -la ../general_dataset/train/labels/ | head
+   # Should see .txt files
+
+5. TRAIN
+   python train_vm.py --epochs 50 --batch 4
+
+================================================================================
+ 🔍 VERIFY FILE STRUCTURE
+================================================================================
+
+Before conversion:
+  ls -la ../general_dataset/train/
+  # Shows only .JPG files, no labels/ folder
+
+After conversion:
+  ls -la ../general_dataset/train/
+  # Shows .JPG files AND labels/ folder
+  
+  ls -la ../general_dataset/train/labels/ | head
+  # Shows .txt files matching your images
+
+================================================================================
+ 📊 WHAT convert_csv_to_yolo.py DOES
+================================================================================
+
+1. Reads CSV files:
+   - train_big_size_A_B_E_K_WH_WB.csv
+   - val_big_size_A_B_E_K_WH_WB.csv
+   - test_big_size_A_B_E_K_WH_WB.csv
+
+2. For each image:
+   - Finds matching image file
+   - Gets image dimensions
+   - Converts bbox coordinates:
+     CSV:  x1, y1, x2, y2, Label (pixels)
+     YOLO: class x_center y_center width height (normalized 0-1)
+
+3. Creates label files:
+   - train/labels/*.txt
+   - val/labels/*.txt
+   - test/labels/*.txt
+
+4. Reports:
+   - Images processed
+   - Annotations written
+   - Missing images (if any)
+
+================================================================================
+ 🎯 EXPECTED OUTPUT
+================================================================================
+
+$ python convert_csv_to_yolo.py
+
+CSV TO YOLO FORMAT CONVERTER
+======================================================================
+Dataset root: /path/to/general_dataset
+
+Checking files:
+  ✓ Training CSV: train_big_size_A_B_E_K_WH_WB.csv
+  ✓ Training Images: /path/to/train
+  ✓ Validation CSV: val_big_size_A_B_E_K_WH_WB.csv
+  ✓ Validation Images: /path/to/val
+  ✓ Test CSV: test_big_size_A_B_E_K_WH_WB.csv
+  ✓ Test Images: /path/to/test
+
+TRAINING SET
+Processing: train_big_size_A_B_E_K_WH_WB.csv
+Converting: 100%|████████████| 928/928 [00:30<00:00, 30.5img/s]
+
+✓ Images processed: 928
+✓ Annotations written: 6000+
+
+... (validation and test sets)
+
+CONVERSION COMPLETE
+Total images: 1297
+Total annotations: 10000+
+
+Label files created in:
+  /path/to/train/labels: 928 files
+  /path/to/val/labels: 111 files
+  /path/to/test/labels: 258 files
+
+✓ Ready for training!
+  Run: python train_vm.py --epochs 50 --batch 4
+
+================================================================================
+ 🐛 IF CONVERSION FAILS
+================================================================================
+
+ERROR: "CSV file not found"
+FIX: Check path exists:
+  ls -la ../general_dataset/groundtruth/csv/
+
+ERROR: "Images not found"
+FIX: Check images exist:
+  ls ../general_dataset/train/*.JPG | head
+
+ERROR: "No annotations written"
+FIX: Check CSV format:
+  head -5 ../general_dataset/groundtruth/csv/train_big_size_A_B_E_K_WH_WB.csv
+  # Should have: Image,x1,y1,x2,y2,Label
+
+================================================================================
+
+🚀 QUICK START (Copy these commands):
+
+cd /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm
+python convert_csv_to_yolo.py
+# (Fix CLASS_NAMES and MODEL in train_vm.py if needed)
+python train_vm.py --epochs 50 --batch 4
+
+================================================================================
+
+💡 TIP: Run convert_csv_to_yolo.py only ONCE
+    It creates the label files you need
+    Then train as many times as you want
+
+================================================================================
+
