@@ -3,12 +3,32 @@
 YOLOv11 Wildlife Detection Training Script - Aerial Small-Object Optimized
 Project: Guacamaya - Microsoft AI for Good Lab
 
-Key changes vs original:
-- Default model: yolo11x.pt (better for small objects; use --model to change)
-- Aerial-friendly augmentations (low mosaic, no flips, gentle rotation & scale)
-- Lower IoU threshold for training (0.4) to boost recall on small boxes
-- AdamW optimizer, lower LR, multi-scale training
-- Smoothed F1-score logged to Weights & Biases
+OPTIMIZED FOR: Aerial wildlife detection with small objects (animals in savanna)
+
+Key optimizations vs standard YOLO training:
+- Default model: yolo11x.pt (best capacity for small objects)
+- Aerial-friendly augmentations:
+  * Low mosaic (0.2): Strong mosaic hurts small object localization
+  * No flips (0.0): Wildlife orientation matters (top-down aerial view)
+  * Gentle rotation (5°): Too much rotation breaks small animal features
+  * Small scale (0.2): Large scale changes lose tiny animals
+- Lower IoU threshold (0.4): Better recall on small/overlapping boxes
+- AdamW optimizer + lower LR (0.002): Better stability for fine-tuning
+- Multi-scale training: Critical for varying animal sizes
+- Smoothed F1-score (EMA): Cleaner monitoring in Weights & Biases
+
+Usage:
+  # Basic training (recommended defaults for aerial wildlife)
+  python train_vm_v2.py
+
+  # Continue training from checkpoint
+  python train_vm_v2.py --weights runs/yolov11_wildlife/weights/best.pt --epochs 100
+
+  # Use smaller model (faster, less GPU memory)
+  python train_vm_v2.py --model yolo11m.pt --batch 4 --imgsz 2048
+
+  # Custom augmentation (experiment carefully - defaults are optimized!)
+  python train_vm_v2.py --rotate 10.0 --scale 0.3 --mosaic 0.3
 """
 
 import os
@@ -56,9 +76,9 @@ class Config:
     # Model & training hyperparameters
     MODEL = "yolo11x.pt"        # default; override with --model or --weights
     EPOCHS = 80
-    BATCH_SIZE = 2              # small because images are large
+    BATCH_SIZE = 2              # small because images are large (yolo11x + 1536px)
     IMG_SIZE = 1536             # good trade-off for 2048px originals
-    PATIENCE = 15
+    PATIENCE = 15               # early stopping patience
     WORKERS = 8
     SAVE_PERIOD = 5
 
@@ -66,19 +86,24 @@ class Config:
     CACHE = False
     RECT = False
 
+    # Optimizer & Learning
+    OPTIMIZER = "AdamW"         # Better for fine-tuning than SGD
+    LR0 = 0.002                 # Lower learning rate for stability
+    IOU_TRAIN = 0.4             # Lower IoU threshold helps small object detection
+
     # Aerial-wildlife-specific augmentation
     # (small objects, top-down, little orientation change)
-    DEGREES = 5.0       # gentle rotation
-    SCALE = 0.20        # moderate zoom; >0.3 often hurts small objects
-    TRANSLATE = 0.10
-    HSV_H = 0.010
-    HSV_S = 0.50
-    HSV_V = 0.30
-    FLIPLR = 0.0        # no flips → wildlife has consistent orientation
-    FLIPUD = 0.0
-    MOSAIC = 0.20       # low mosaic: strong mosaic kills tiny animals
-    MIXUP = 0.0
-    COPY_PASTE = 0.10
+    DEGREES = 5.0               # gentle rotation (too much hurts small objects)
+    SCALE = 0.20                # smaller scale = better small-object detection
+    TRANSLATE = 0.10            # moderate translation
+    HSV_H = 0.01                # minimal hue shift (wildlife colors matter)
+    HSV_S = 0.5                 # moderate saturation
+    HSV_V = 0.3                 # moderate brightness
+    FLIPLR = 0.0                # do NOT flip wildlife horizontally (orientation matters)
+    FLIPUD = 0.0                # never flip vertically (top-down view)
+    MOSAIC = 0.20               # low mosaic: too much mosaic hurts small-object location
+    MIXUP = 0.0                 # disabled for aerial
+    COPY_PASTE = 0.10           # helps animals slightly
 
     # Device
     if torch.cuda.is_available():
@@ -91,7 +116,7 @@ class Config:
     # WandB
     WANDB_PROJECT = "yolov11-wildlife-detection"
     WANDB_ENTITY = None         # put your username if needed
-    WANDB_RUN_NAME = f"yolo11x-wildlife-{IMG_SIZE}px"
+    WANDB_RUN_NAME = None       # Will be set dynamically based on MODEL
 
 
 # ============================================================================
@@ -189,10 +214,14 @@ def initialize_wandb(config: Config, enabled: bool = True):
 
     try:
         if wandb.login(relogin=False):
+            # Generate run name based on model and image size
+            model_name = Path(config.MODEL).stem  # e.g., "yolo11x" or "best"
+            run_name = f"{model_name}-wildlife-{config.IMG_SIZE}px"
+            
             run = wandb.init(
                 project=config.WANDB_PROJECT,
                 entity=config.WANDB_ENTITY,
-                name=config.WANDB_RUN_NAME,
+                name=run_name,
                 config={
                     "model": config.MODEL,
                     "epochs": config.EPOCHS,
@@ -200,10 +229,21 @@ def initialize_wandb(config: Config, enabled: bool = True):
                     "img_size": config.IMG_SIZE,
                     "patience": config.PATIENCE,
                     "device": config.DEVICE,
+                    "optimizer": config.OPTIMIZER,
+                    "lr0": config.LR0,
+                    "iou_train": config.IOU_TRAIN,
                     "classes": config.CLASS_NAMES,
+                    # Augmentation
+                    "degrees": config.DEGREES,
+                    "scale": config.SCALE,
+                    "mosaic": config.MOSAIC,
+                    "copy_paste": config.COPY_PASTE,
                 },
             )
-            print(f"✓ WandB initialized: {run.get_url()}")
+            print(f"✓ WandB initialized")
+            print(f"  Project: {config.WANDB_PROJECT}")
+            print(f"  Run name: {run_name}")
+            print(f"  Dashboard: {run.get_url()}")
             return run
     except Exception as e:
         print(f"⚠ Could not initialize WandB: {e}")
@@ -283,9 +323,9 @@ def train_model(config: Config, yaml_path: Path, use_wandb: bool = True):
         "name": "yolov11_wildlife",
         "exist_ok": True,
         "pretrained": True,
-        "optimizer": "AdamW",
-        "lr0": 0.002,          # lower LR than default
-        "iou": 0.40,           # better for small boxes
+        "optimizer": config.OPTIMIZER,  # AdamW for aerial wildlife
+        "lr0": config.LR0,              # lower LR for stability
+        "iou": config.IOU_TRAIN,        # lower IoU better for small boxes
         "verbose": True,
         "seed": 42,
         "deterministic": True,
@@ -293,20 +333,20 @@ def train_model(config: Config, yaml_path: Path, use_wandb: bool = True):
         "save": True,
         "save_period": config.SAVE_PERIOD,
         "workers": config.WORKERS,
-        "amp": True,
+        "amp": True,                    # Automatic Mixed Precision
         "cache": config.CACHE,
         "rect": config.RECT,
-        "multi_scale": True,   # important for aerial small objects
+        "multi_scale": True,            # CRITICAL for aerial small objects
 
-        # Augmentation
+        # Aerial-optimized augmentation (gentle transforms for small objects)
         "hsv_h": config.HSV_H,
         "hsv_s": config.HSV_S,
         "hsv_v": config.HSV_V,
         "degrees": config.DEGREES,
         "translate": config.TRANSLATE,
         "scale": config.SCALE,
-        "shear": 0.0,
-        "perspective": 0.0,
+        "shear": 0.0,                   # disabled for aerial
+        "perspective": 0.0,             # disabled for aerial
         "flipud": config.FLIPUD,
         "fliplr": config.FLIPLR,
         "mosaic": config.MOSAIC,
@@ -315,19 +355,34 @@ def train_model(config: Config, yaml_path: Path, use_wandb: bool = True):
     }
 
     print("\nTraining Configuration:")
+    print(f"  Model       : {config.MODEL}")
     print(f"  Epochs      : {config.EPOCHS}")
     print(f"  Batch size  : {config.BATCH_SIZE}")
     print(f"  Image size  : {config.IMG_SIZE}")
     print(f"  Device      : {config.DEVICE}")
     print(f"  Workers     : {config.WORKERS}")
-    print(f"  Optimizer   : AdamW, lr0={train_args['lr0']}")
-    print(f"  IoU (train) : {train_args['iou']}")
+    print(f"  Save period : Every {config.SAVE_PERIOD} epochs")
+    
+    print(f"\nOptimizer & Learning:")
+    print(f"  Optimizer   : {config.OPTIMIZER}")
+    print(f"  Learning rate: {config.LR0}")
+    print(f"  IoU (train) : {config.IOU_TRAIN}")
     print(f"  Multi-scale : {train_args['multi_scale']}")
-    print(f"  Mosaic      : {config.MOSAIC}")
-    print(f"  Scale       : {config.SCALE}")
-    print(f"  Degrees     : {config.DEGREES}")
-    print(f"  Flips (LR/UD): {config.FLIPLR} / {config.FLIPUD}")
-    print(f"  Copy-paste  : {config.COPY_PASTE}")
+    print(f"  Mixed Precision: Enabled")
+    
+    print(f"\nAerial-Optimized Augmentation (Small Objects):")
+    print(f"  Rotation    : ±{config.DEGREES}° (gentle)")
+    print(f"  Scale/Zoom  : {config.SCALE * 100:.0f}% (small-object friendly)")
+    print(f"  Translation : {config.TRANSLATE * 100:.0f}%")
+    print(f"  HSV (H/S/V) : {config.HSV_H:.3f} / {config.HSV_S:.2f} / {config.HSV_V:.2f}")
+    print(f"  Flips (LR/UD): {config.FLIPLR} / {config.FLIPUD} (disabled for aerial)")
+    print(f"  Mosaic      : {config.MOSAIC * 100:.0f}% (low to preserve small objects)")
+    print(f"  Copy-paste  : {config.COPY_PASTE * 100:.0f}%")
+    print(f"  Mixup       : {config.MIXUP} (disabled)")
+    
+    print(f"\nMemory & Speed:")
+    print(f"  Cache       : {config.CACHE}")
+    print(f"  Rect        : {config.RECT}")
     print(f"  WandB       : {'Enabled' if use_wandb else 'Disabled'}")
 
     print("\n" + "=" * 70)
@@ -376,6 +431,7 @@ def validate_model(model: YOLO, yaml_path: Path, config: Config, log_to_wandb: b
     print(f"  Recall   : {recall:.4f}")
     print(f"  F1 Score : {f1_score:.4f}")
 
+    # Log custom metrics to Wandb
     if log_to_wandb and wandb.run is not None:
         wandb.log(
             {
@@ -386,14 +442,24 @@ def validate_model(model: YOLO, yaml_path: Path, config: Config, log_to_wandb: b
                 "test/f1_score": f1_score,
             }
         )
+        print("✓ Test metrics logged to WandB")
 
-        if hasattr(results.box, "ap_class_index"):
-            per_class_metrics = {}
-            for idx, class_idx in enumerate(results.box.ap_class_index):
-                name = config.CLASS_NAMES[int(class_idx)]
-                per_class_metrics[f"test/{name}_mAP50"] = results.box.ap50[idx]
+    # Per-class metrics
+    if hasattr(results.box, "ap_class_index"):
+        print(f"\nPer-class mAP50:")
+        per_class_metrics = {}
+        for idx, class_idx in enumerate(results.box.ap_class_index):
+            class_name = config.CLASS_NAMES[int(class_idx)]
+            map50 = results.box.ap50[idx]
+            print(f"  {class_name:12s}: {map50:.4f}")
+            
+            # Log per-class metrics to Wandb
+            if log_to_wandb and wandb.run is not None:
+                per_class_metrics[f"test/{class_name}_mAP50"] = map50
+        
+        if per_class_metrics and wandb.run is not None:
             wandb.log(per_class_metrics)
-            print("✓ Per-class mAP50 logged to WandB.")
+            print("✓ Per-class mAP50 logged to WandB")
 
     return results
 
@@ -404,16 +470,28 @@ def validate_model(model: YOLO, yaml_path: Path, config: Config, log_to_wandb: b
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Train YOLOv11 for Wildlife Aerial Detection"
+        description="Train YOLOv11x for Wildlife Aerial Detection (Small-Object Optimized)"
     )
 
+    # Basic training parameters
     parser.add_argument("--no-wandb", action="store_true", help="Disable WandB logging")
-    parser.add_argument("--epochs", type=int, help="Number of epochs")
-    parser.add_argument("--batch", type=int, help="Batch size")
-    parser.add_argument("--imgsz", type=int, help="Image size")
+    parser.add_argument("--epochs", type=int, help="Number of epochs (default: 80)")
+    parser.add_argument("--batch", type=int, help="Batch size (default: 2 for yolo11x)")
+    parser.add_argument("--imgsz", type=int, help="Image size (default: 1536)")
+    parser.add_argument("--patience", type=int, help="Early stopping patience (default: 15)")
     parser.add_argument("--weights", type=str, help="Custom .pt weights to fine-tune")
-    parser.add_argument("--model", type=str, help="Base model (yolo11s/m/l/x.pt)")
+    parser.add_argument("--model", type=str, help="Base model (yolo11s/m/l/x.pt, default: yolo11x.pt)")
     parser.add_argument("--wandb-key", type=str, help="WandB API key")
+    
+    # Augmentation parameters (aerial-optimized defaults, but customizable)
+    parser.add_argument("--rotate", type=float, help="Rotation degrees (default: 5.0)")
+    parser.add_argument("--scale", type=float, help="Scale/zoom (default: 0.20)")
+    parser.add_argument("--translate", type=float, help="Translation (default: 0.10)")
+    parser.add_argument("--hsv-h", type=float, help="HSV Hue (default: 0.01)")
+    parser.add_argument("--hsv-s", type=float, help="HSV Saturation (default: 0.5)")
+    parser.add_argument("--hsv-v", type=float, help="HSV Value (default: 0.3)")
+    parser.add_argument("--mosaic", type=float, help="Mosaic probability (default: 0.20)")
+    parser.add_argument("--copy-paste", type=float, help="Copy-paste probability (default: 0.10)")
 
     args = parser.parse_args()
 
@@ -422,15 +500,35 @@ def main():
 
     config = Config()
 
-    # CLI overrides
+    # CLI overrides - Basic training parameters
     if args.epochs:
         config.EPOCHS = args.epochs
     if args.batch:
         config.BATCH_SIZE = args.batch
     if args.imgsz:
         config.IMG_SIZE = args.imgsz
+    if args.patience:
+        config.PATIENCE = args.patience
     if args.model:
         config.MODEL = args.model
+    
+    # CLI overrides - Augmentation parameters
+    if args.rotate is not None:
+        config.DEGREES = args.rotate
+    if args.scale is not None:
+        config.SCALE = args.scale
+    if args.translate is not None:
+        config.TRANSLATE = args.translate
+    if args.hsv_h is not None:
+        config.HSV_H = args.hsv_h
+    if args.hsv_s is not None:
+        config.HSV_S = args.hsv_s
+    if args.hsv_v is not None:
+        config.HSV_V = args.hsv_v
+    if args.mosaic is not None:
+        config.MOSAIC = args.mosaic
+    if args.copy_paste is not None:
+        config.COPY_PASTE = args.copy_paste
 
     # Custom weights override everything
     if args.weights:
