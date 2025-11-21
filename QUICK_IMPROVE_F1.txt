@@ -1,0 +1,96 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║              🎯 QUICK FIX: Improve F1 Score from 58%                  ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+Current: F1 = 58% (Precision = 74%, Recall = 47% ← TOO LOW!)
+Target: F1 > 70%
+
+PROBLEM: Model is missing 53% of animals (low recall)!
+
+═══════════════════════════════════════════════════════════════════════
+
+⚡ TRY THIS FIRST (5 minutes!)
+
+Lower the confidence threshold:
+
+python -c "
+from ultralytics import YOLO
+model = YOLO('runs/yolov11_wildlife/weights/best.pt')
+for conf in [0.05, 0.10, 0.15, 0.20, 0.25]:
+    results = model.val(data='../general_dataset/data.yaml', conf=conf)
+    p, r = results.box.mp, results.box.mr
+    f1 = 2*p*r/(p+r) if (p+r)>0 else 0
+    print(f'Conf={conf:.2f}: F1={f1:.3f}, P={p:.3f}, R={r:.3f}')
+"
+
+Expected: F1 jumps to 62-65% just by lowering threshold!
+
+═══════════════════════════════════════════════════════════════════════
+
+🚀 THEN TRY THIS (5-8 hours)
+
+Train for MORE epochs (you probably stopped too early):
+
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 100 \
+  --batch 4 \
+  --imgsz 2048 \
+  --rotate 15.0 \
+  --scale 0.7 \
+  --translate 0.15 \
+  --fliplr 0.6 \
+  --hsv-s 0.8 \
+  --hsv-v 0.5 \
+  --mosaic 1.0
+
+Expected: F1 improves to 65-68%
+
+═══════════════════════════════════════════════════════════════════════
+
+💪 IF STILL NOT ENOUGH (10-15 hours)
+
+Switch to MEDIUM model (more capacity):
+
+1. Edit train_vm.py line 69:
+   Change: MODEL = "yolo11s.pt"
+   To:     MODEL = "yolo11m.pt"
+
+2. Train:
+   python train_vm.py \
+     --epochs 80 \
+     --batch 3 \
+     --imgsz 2048 \
+     --rotate 20.0 \
+     --scale 0.8 \
+     --translate 0.15 \
+     --fliplr 0.6 \
+     --hsv-s 0.9
+
+Expected: F1 improves to 70-75%
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 PRIORITY ORDER
+
+1. ⭐ Test conf thresholds (10 min) → +4-7% F1
+2. ⭐ Train more epochs (5 hrs) → +3-10% F1
+3. ⭐ Use yolo11m model (12 hrs) → +5-15% F1
+4. Aggressive augmentation (8 hrs) → +3-5% F1
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ START NOW
+
+# Step 1 (now):
+python -c "from ultralytics import YOLO; model = YOLO('runs/yolov11_wildlife/weights/best.pt'); [print(f'Conf={c:.2f}: F1={2*model.val(data=\"../general_dataset/data.yaml\",conf=c).box.mp*model.val(data=\"../general_dataset/data.yaml\",conf=c).box.mr/(model.val(data=\"../general_dataset/data.yaml\",conf=c).box.mp+model.val(data=\"../general_dataset/data.yaml\",conf=c).box.mr):.3f}') for c in [0.05,0.10,0.15,0.20]]"
+
+# Step 2 (next):
+python train_vm.py --weights best.pt --epochs 100 --batch 4 --rotate 15.0 --scale 0.7
+
+═══════════════════════════════════════════════════════════════════════
+
+📚 Full guide: IMPROVE_F1_SCORE_GUIDE.txt
+
+═══════════════════════════════════════════════════════════════════════
+

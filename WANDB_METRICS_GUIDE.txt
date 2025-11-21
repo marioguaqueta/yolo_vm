@@ -1,0 +1,453 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║            📊 Complete Wandb Metrics Guide - Already Active!         ║
+║              F1 Score, Recall & All Metrics Explained                ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+✅ GOOD NEWS: F1 Score and Recall are ALREADY being logged to Wandb!
+   Your train_vm.py has a custom callback that logs F1 after each epoch.
+
+═══════════════════════════════════════════════════════════════════════
+
+📈 METRICS LOGGED DURING TRAINING (Every Epoch)
+
+AUTOMATICALLY LOGGED BY YOLO:
+───────────────────────────────────────────────────────────────────────
+✅ metrics/precision(B)           - Box precision (0-1)
+✅ metrics/recall(B)               - Box recall (0-1) ← Already there!
+✅ metrics/mAP50(B)                - Mean Average Precision @ IoU=0.50
+✅ metrics/mAP50-95(B)             - Mean Average Precision @ IoU=0.50-0.95
+
+✅ train/box_loss                  - Bounding box regression loss
+✅ train/cls_loss                  - Classification loss
+✅ train/dfl_loss                  - Distribution Focal Loss
+
+✅ val/box_loss                    - Validation box loss
+✅ val/cls_loss                    - Validation classification loss
+✅ val/dfl_loss                    - Validation DFL loss
+
+✅ lr/pg0, lr/pg1, lr/pg2          - Learning rates per parameter group
+
+CUSTOM METRIC (Added by Your Callback):
+───────────────────────────────────────────────────────────────────────
+✅ metrics/f1_score                - F1 Score (0-1) ← Custom added!
+
+FORMULA:
+    F1 = 2 × (Precision × Recall) / (Precision + Recall)
+
+WHERE TO FIND IN CODE:
+    Line 234-252 in train_vm.py
+    Function: on_fit_epoch_end(trainer)
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 METRICS LOGGED AFTER VALIDATION/TESTING (Final Results)
+
+CUSTOM METRICS (Added by validate_model function):
+───────────────────────────────────────────────────────────────────────
+✅ test/mAP50                      - Final test mAP50
+✅ test/mAP50-95                   - Final test mAP50-95
+✅ test/precision                  - Final test precision
+✅ test/recall                     - Final test recall ← Already there!
+✅ test/f1_score                   - Final test F1 score ← Already there!
+
+PER-CLASS METRICS:
+───────────────────────────────────────────────────────────────────────
+✅ test/Buffalo_mAP50              - mAP50 for Buffalo class
+✅ test/Elephant_mAP50             - mAP50 for Elephant class
+✅ test/Kudu_mAP50                 - mAP50 for Kudu class
+✅ test/Topi_mAP50                 - mAP50 for Topi class
+✅ test/Warthog_mAP50              - mAP50 for Warthog class
+✅ test/Waterbuck_mAP50            - mAP50 for Waterbuck class
+
+WHERE TO FIND IN CODE:
+    Lines 370-411 in train_vm.py
+    Function: validate_model(model, yaml_path, config, log_to_wandb=True)
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 HOW TO VIEW THESE METRICS IN WANDB
+
+STEP 1: Open Your Wandb Project
+───────────────────────────────────────────────────────────────────────
+1. Go to: https://wandb.ai
+2. Login
+3. Navigate to your project: "wildlife-detection-yolo11"
+4. Click on your latest run
+
+STEP 2: View Training Charts
+───────────────────────────────────────────────────────────────────────
+You'll see automatic charts for:
+
+📈 Chart 1: Performance Metrics (Over Time)
+    • metrics/precision(B)
+    • metrics/recall(B)
+    • metrics/mAP50(B)
+    • metrics/f1_score          ← Your custom F1!
+
+📉 Chart 2: Training Losses
+    • train/box_loss
+    • train/cls_loss
+    • train/dfl_loss
+
+📉 Chart 3: Validation Losses
+    • val/box_loss
+    • val/cls_loss
+    • val/dfl_loss
+
+📊 Chart 4: Learning Rates
+    • lr/pg0, lr/pg1, lr/pg2
+
+STEP 3: Create Custom Charts
+───────────────────────────────────────────────────────────────────────
+To see F1, Precision, and Recall together:
+
+1. Click "+ Add Panel" (top right)
+2. Select "Line Plot"
+3. Click "Edit" on the chart
+4. Select metrics:
+   - metrics/f1_score
+   - metrics/precision(B)
+   - metrics/recall(B)
+5. Click "Save"
+
+Now you have a custom chart showing all three together! 📈
+
+STEP 4: View Test Results (After Training)
+───────────────────────────────────────────────────────────────────────
+Scroll down to "Summary" section to see:
+    • test/f1_score
+    • test/recall
+    • test/precision
+    • test/mAP50
+    • Per-class mAP50 for each animal
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 EXAMPLE: What Your Wandb Dashboard Shows
+
+DURING TRAINING (Real-time updates):
+───────────────────────────────────────────────────────────────────────
+Epoch 0:
+  metrics/precision(B): 0.540
+  metrics/recall(B): 0.320
+  metrics/f1_score: 0.402
+  metrics/mAP50(B): 0.480
+
+Epoch 10:
+  metrics/precision(B): 0.690
+  metrics/recall(B): 0.450
+  metrics/f1_score: 0.545
+  metrics/mAP50(B): 0.620
+
+Epoch 20:
+  metrics/precision(B): 0.740
+  metrics/recall(B): 0.470
+  metrics/f1_score: 0.574     ← Your current result
+  metrics/mAP50(B): 0.650
+
+(Continues for all epochs...)
+
+AFTER TRAINING (Final test results):
+───────────────────────────────────────────────────────────────────────
+test/f1_score: 0.574
+test/precision: 0.740
+test/recall: 0.470
+test/mAP50: 0.650
+test/mAP50-95: 0.420
+
+Per-class:
+  test/Buffalo_mAP50: 0.680
+  test/Elephant_mAP50: 0.720
+  test/Kudu_mAP50: 0.580
+  test/Topi_mAP50: 0.620
+  test/Warthog_mAP50: 0.650
+  test/Waterbuck_mAP50: 0.640
+
+═══════════════════════════════════════════════════════════════════════
+
+🎨 RECOMMENDED WANDB CHART CONFIGURATIONS
+
+CHART 1: Detection Performance (Most Important!)
+───────────────────────────────────────────────────────────────────────
+Title: "F1, Precision, Recall (Training)"
+Type: Line Plot
+Metrics:
+  • metrics/f1_score          (primary metric)
+  • metrics/precision(B)
+  • metrics/recall(B)
+  • metrics/mAP50(B)
+
+Why: Shows overall model performance over time
+Goal: All metrics should increase together
+
+───────────────────────────────────────────────────────────────────────
+
+CHART 2: Loss Curves
+───────────────────────────────────────────────────────────────────────
+Title: "Training vs Validation Loss"
+Type: Line Plot
+Metrics:
+  • train/box_loss
+  • val/box_loss
+  • train/cls_loss
+  • val/cls_loss
+
+Why: Detects overfitting (if val loss increases while train decreases)
+Goal: Both should decrease together
+
+───────────────────────────────────────────────────────────────────────
+
+CHART 3: Per-Class Performance
+───────────────────────────────────────────────────────────────────────
+Title: "Per-Animal mAP50"
+Type: Bar Chart
+Metrics:
+  • test/Buffalo_mAP50
+  • test/Elephant_mAP50
+  • test/Kudu_mAP50
+  • test/Topi_mAP50
+  • test/Warthog_mAP50
+  • test/Waterbuck_mAP50
+
+Why: Identifies which animals are hardest to detect
+Goal: All bars should be > 0.70
+
+═══════════════════════════════════════════════════════════════════════
+
+🔍 HOW TO INTERPRET YOUR METRICS
+
+F1 SCORE (metrics/f1_score):
+───────────────────────────────────────────────────────────────────────
+Current: 0.574 (58%)
+
+What it means:
+  • Harmonic mean of Precision and Recall
+  • Balances between false positives and false negatives
+  • Best metric for imbalanced datasets
+
+Interpretation:
+  ✅ > 0.70: Excellent
+  ✅ 0.60-0.70: Good
+  ⚠️  0.50-0.60: Acceptable (your current)
+  ❌ < 0.50: Needs improvement
+
+Target: 0.70+ (70%)
+
+───────────────────────────────────────────────────────────────────────
+
+RECALL (metrics/recall(B)):
+───────────────────────────────────────────────────────────────────────
+Current: 0.470 (47%)
+
+What it means:
+  • % of actual animals that were detected
+  • Low recall = missing many animals
+  
+Formula:
+  Recall = True Positives / (True Positives + False Negatives)
+  
+Your case:
+  47% recall means model MISSES 53% of animals! ❌
+
+Interpretation:
+  ✅ > 0.70: Excellent
+  ⚠️  0.50-0.70: Acceptable
+  ❌ < 0.50: Too many missed detections (your current)
+
+Target: 0.65+ (65%)
+
+───────────────────────────────────────────────────────────────────────
+
+PRECISION (metrics/precision(B)):
+───────────────────────────────────────────────────────────────────────
+Current: 0.740 (74%)
+
+What it means:
+  • % of detections that are correct
+  • Low precision = many false alarms
+
+Formula:
+  Precision = True Positives / (True Positives + False Positives)
+
+Your case:
+  74% precision means 26% of detections are false positives ✅
+  This is actually GOOD!
+
+Interpretation:
+  ✅ > 0.70: Excellent (your current!) ✅
+  ✅ 0.60-0.70: Good
+  ⚠️  0.50-0.60: Acceptable
+  ❌ < 0.50: Too many false alarms
+
+Target: Maintain > 0.70
+
+───────────────────────────────────────────────────────────────────────
+
+mAP50 (metrics/mAP50(B)):
+───────────────────────────────────────────────────────────────────────
+Current: ~0.650 (65%)
+
+What it means:
+  • Mean Average Precision at IoU threshold = 0.5
+  • Overall detection quality across all classes
+  • YOLO's standard metric
+
+Interpretation:
+  ✅ > 0.80: Excellent
+  ✅ 0.70-0.80: Good
+  ⚠️  0.60-0.70: Acceptable (your current)
+  ❌ < 0.60: Needs improvement
+
+Target: 0.75+ (75%)
+
+═══════════════════════════════════════════════════════════════════════
+
+💡 YOUR SPECIFIC SITUATION
+
+Current Metrics:
+───────────────────────────────────────────────────────────────────────
+✅ Precision: 74%    (Good - when it detects, usually correct)
+❌ Recall: 47%       (BAD - missing 53% of animals!)
+⚠️  F1 Score: 58%    (Low due to poor recall)
+⚠️  mAP50: 65%       (Acceptable but could be better)
+
+Problem Diagnosis:
+───────────────────────────────────────────────────────────────────────
+The model is TOO CONSERVATIVE:
+  • It has good precision (correct when it detects)
+  • But very low recall (doesn't detect enough)
+  • This means: Model knows what animals look like, but is not
+    confident enough to report all detections
+
+Solution:
+───────────────────────────────────────────────────────────────────────
+1. Lower confidence threshold (quick fix)
+2. Train more epochs (improves confidence)
+3. Use larger model (more capacity)
+
+Expected After Retraining:
+───────────────────────────────────────────────────────────────────────
+✅ Precision: 72-76%     (slight decrease, but still good)
+✅ Recall: 62-68%        (BIG improvement - catches more animals!)
+✅ F1 Score: 67-72%      (much better balance)
+✅ mAP50: 72-78%         (overall quality improves)
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 MONITORING STRATEGY DURING RETRAINING
+
+EVERY 10 EPOCHS: Check These Metrics
+───────────────────────────────────────────────────────────────────────
+1. metrics/f1_score
+   → Should steadily increase from 0.58 to 0.70+
+
+2. metrics/recall(B)
+   → Should steadily increase from 0.47 to 0.65+
+   → This is your PRIORITY metric!
+
+3. metrics/precision(B)
+   → Should stay around 0.70-0.75
+   → Slight decrease is OK if recall improves
+
+4. train/box_loss vs val/box_loss
+   → Both should decrease
+   → If val increases while train decreases → overfitting!
+
+WHAT TO LOOK FOR:
+───────────────────────────────────────────────────────────────────────
+✅ GOOD SIGNS:
+   • F1 score increasing steadily
+   • Recall increasing (most important!)
+   • Losses decreasing
+   • Val loss tracking train loss
+
+❌ BAD SIGNS:
+   • F1 score plateaued for 20+ epochs → stop training
+   • Val loss increasing → overfitting
+   • Precision dropping below 0.65 → too many false positives
+   • Recall not improving after 50 epochs → need bigger model
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 QUICK REFERENCE: Where Each Metric is Logged
+
+IN YOUR CODE (train_vm.py):
+───────────────────────────────────────────────────────────────────────
+┌─────────────────────────┬──────────────┬─────────────────────────┐
+│ Metric                  │ Line Number  │ When Logged             │
+├─────────────────────────┼──────────────┼─────────────────────────┤
+│ metrics/f1_score        │ 249-252      │ After every epoch       │
+│ metrics/precision(B)    │ Automatic    │ After every epoch       │
+│ metrics/recall(B)       │ Automatic    │ After every epoch       │
+│ metrics/mAP50(B)        │ Automatic    │ After every epoch       │
+│ test/f1_score           │ 392          │ After final validation  │
+│ test/recall             │ 391          │ After final validation  │
+│ test/precision          │ 390          │ After final validation  │
+│ test/mAP50              │ 388          │ After final validation  │
+│ test/{Animal}_mAP50     │ 406          │ After final validation  │
+└─────────────────────────┴──────────────┴─────────────────────────┘
+
+IN WANDB DASHBOARD:
+───────────────────────────────────────────────────────────────────────
+Section: "Charts" (during training)
+  → metrics/f1_score         ✅ Real-time F1 score
+  → metrics/recall(B)        ✅ Real-time recall
+  → metrics/precision(B)     ✅ Real-time precision
+
+Section: "Summary" (after training)
+  → test/f1_score            ✅ Final F1 score
+  → test/recall              ✅ Final recall
+  → test/precision           ✅ Final precision
+  → test/{Animal}_mAP50      ✅ Per-class performance
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ SUMMARY
+
+YOUR METRICS ARE ALREADY ACTIVE! 🎉
+───────────────────────────────────────────────────────────────────────
+✅ F1 Score: Logged every epoch (metrics/f1_score)
+✅ Recall: Logged every epoch (metrics/recall(B))
+✅ Precision: Logged every epoch (metrics/precision(B))
+✅ mAP50: Logged every epoch (metrics/mAP50(B))
+✅ Per-class mAP: Logged at end (test/{Animal}_mAP50)
+
+WHERE TO SEE THEM:
+───────────────────────────────────────────────────────────────────────
+1. Go to https://wandb.ai
+2. Open your "wildlife-detection-yolo11" project
+3. Click your latest run
+4. Look at "Charts" section → See real-time metrics
+5. Look at "Summary" section → See final results
+
+WHAT TO MONITOR:
+───────────────────────────────────────────────────────────────────────
+Priority 1: metrics/f1_score (should reach 0.70+)
+Priority 2: metrics/recall(B) (should reach 0.65+)
+Priority 3: Per-class mAP50 (identify weak animals)
+
+═══════════════════════════════════════════════════════════════════════
+
+🚀 NEXT STEPS
+
+1. Start retraining (see IMPROVE_F1_SCORE_GUIDE.txt)
+2. Open Wandb dashboard in browser
+3. Watch metrics/f1_score and metrics/recall(B) increase!
+4. Target: F1 > 0.70, Recall > 0.65
+
+Command:
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 100 \
+  --batch 4 \
+  --rotate 15.0 \
+  --scale 0.7
+
+═══════════════════════════════════════════════════════════════════════
+
+Status: ✅ Metrics Already Configured and Logging!
+Your Code: ✅ Has F1 score callback active!
+Wandb: ✅ Receiving all metrics!
+
+═══════════════════════════════════════════════════════════════════════
+

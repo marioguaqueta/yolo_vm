@@ -1,0 +1,497 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║            🚀 IMPROVE F1 SCORE - Complete Strategy Guide             ║
+║              From 58% to 70%+ F1 Score - Action Plan                 ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+Current Performance: F1 = 58%, Precision = 74%, Recall = 47%
+Target: F1 > 70%, Precision > 70%, Recall > 65%
+
+THE PROBLEM: Low Recall (47%) → Model is missing 53% of animals!
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 IMMEDIATE ACTIONS (Try These First!)
+
+ACTION 1: Lower Confidence Threshold (FASTEST FIX!)
+───────────────────────────────────────────────────────────────────────
+Your model is too conservative. Lower the confidence threshold:
+
+# After training, test with different thresholds:
+python -c "
+from ultralytics import YOLO
+model = YOLO('runs/yolov11_wildlife/weights/best.pt')
+
+# Test different confidence thresholds
+for conf in [0.01, 0.05, 0.10, 0.15, 0.20, 0.25]:
+    results = model.val(data='../general_dataset/data.yaml', conf=conf)
+    print(f'Conf={conf}: P={results.box.mp:.3f}, R={results.box.mr:.3f}, F1={(2*results.box.mp*results.box.mr/(results.box.mp+results.box.mr)):.3f}')
+"
+
+Expected Result: Lower confidence → Higher Recall → Better F1
+Recommended: Try conf=0.10 or conf=0.15
+
+───────────────────────────────────────────────────────────────────────
+
+ACTION 2: Train for More Epochs (EASY WIN!)
+───────────────────────────────────────────────────────────────────────
+You may have stopped training too early!
+
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 100 \
+  --batch 4 \
+  --imgsz 2048 \
+  --rotate 15.0 \
+  --scale 0.7 \
+  --translate 0.15 \
+  --fliplr 0.6 \
+  --hsv-s 0.8 \
+  --hsv-v 0.5 \
+  --mosaic 1.0
+
+Why: Models often improve significantly between epochs 50-100
+Expected: +5-10% improvement in F1
+
+───────────────────────────────────────────────────────────────────────
+
+ACTION 3: Use Larger Model (MORE CAPACITY!)
+───────────────────────────────────────────────────────────────────────
+yolo11s is the smallest model. Try medium or large:
+
+# Edit train_vm.py line 69:
+# Change: MODEL = "yolo11s.pt"
+# To:     MODEL = "yolo11m.pt"  (medium - 2x capacity)
+# Or:     MODEL = "yolo11l.pt"  (large - 2.5x capacity)
+
+Then train:
+python train_vm.py \
+  --epochs 80 \
+  --batch 3 \
+  --imgsz 2048 \
+  --rotate 15.0 \
+  --scale 0.7
+
+Why: Larger model can learn more complex patterns
+Expected: +5-15% improvement in F1
+Note: Reduce batch size to 3 or 2 for larger models
+
+═══════════════════════════════════════════════════════════════════════
+
+🔧 ADVANCED IMPROVEMENTS
+
+ACTION 4: Aggressive Data Augmentation
+───────────────────────────────────────────────────────────────────────
+Make model more robust with heavy augmentation:
+
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 100 \
+  --batch 4 \
+  --imgsz 2048 \
+  --rotate 30.0 \
+  --scale 0.9 \
+  --translate 0.2 \
+  --fliplr 0.7 \
+  --hsv-h 0.05 \
+  --hsv-s 0.9 \
+  --hsv-v 0.6 \
+  --mosaic 1.0
+
+Why: More variation helps generalization
+Expected: +3-8% improvement
+
+───────────────────────────────────────────────────────────────────────
+
+ACTION 5: Multi-Scale Training
+───────────────────────────────────────────────────────────────────────
+Train at different resolutions:
+
+# Step 1: Train at 1280
+python train_vm.py --imgsz 1280 --batch 8 --epochs 50
+
+# Step 2: Fine-tune at 2048
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --imgsz 2048 --batch 4 --epochs 50
+
+Why: Learns features at different scales
+Expected: +3-5% improvement
+
+───────────────────────────────────────────────────────────────────────
+
+ACTION 6: Adjust NMS and IoU Thresholds
+───────────────────────────────────────────────────────────────────────
+Create custom validation script:
+
+# Save as test_thresholds.py:
+from ultralytics import YOLO
+
+model = YOLO('runs/yolov11_wildlife/weights/best.pt')
+
+# Test different IoU and confidence combinations
+for iou in [0.3, 0.4, 0.5, 0.6, 0.7]:
+    for conf in [0.05, 0.10, 0.15, 0.20]:
+        results = model.val(
+            data='../general_dataset/data.yaml',
+            iou=iou,
+            conf=conf,
+            verbose=False
+        )
+        p, r = results.box.mp, results.box.mr
+        f1 = 2*p*r/(p+r) if (p+r) > 0 else 0
+        print(f'IoU={iou}, Conf={conf:.2f}: P={p:.3f}, R={r:.3f}, F1={f1:.3f}')
+
+Run: python test_thresholds.py
+
+Why: Find optimal thresholds for your specific dataset
+Expected: +2-5% improvement
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 DIAGNOSTIC: Understanding Your Low Recall
+
+Your metrics show:
+  Precision: 74% (good - when model detects, it's usually correct)
+  Recall: 47% (BAD - model misses 53% of animals!)
+  F1: 58% (low due to poor recall)
+
+POSSIBLE CAUSES:
+
+1. Confidence Threshold Too High
+   → Model sees animals but doesn't report them (not confident enough)
+   → FIX: Lower conf threshold to 0.10 or 0.15
+
+2. Small/Distant Animals
+   → Hard to detect in high-resolution images
+   → FIX: Ensure training at high resolution (2048px) ✓
+
+3. Model Too Small
+   → yolo11s may not have enough capacity
+   → FIX: Use yolo11m or yolo11l
+
+4. Insufficient Training
+   → Only trained 20 epochs (you showed epoch 16/20)
+   → FIX: Train for 80-100 epochs
+
+5. Class Imbalance
+   → Some species harder to detect than others
+   → CHECK: Look at per-class metrics in Wandb
+
+═══════════════════════════════════════════════════════════════════════
+
+🎓 STEP-BY-STEP IMPROVEMENT PLAN
+
+WEEK 1: Quick Wins
+───────────────────────────────────────────────────────────────────────
+Day 1: Test confidence thresholds (see ACTION 1)
+       → Find optimal threshold
+       → Should get to ~62-65% F1 immediately
+
+Day 2: Continue training with more epochs
+       python train_vm.py --weights best.pt --epochs 100 --batch 4
+       → Let it run overnight
+       → Should reach ~65-68% F1
+
+Day 3: Evaluate and compare in Wandb
+       → Check which approach worked best
+
+───────────────────────────────────────────────────────────────────────
+
+WEEK 2: Bigger Model
+───────────────────────────────────────────────────────────────────────
+Day 1: Switch to yolo11m (medium model)
+       Edit: MODEL = "yolo11m.pt" in train_vm.py
+       python train_vm.py --epochs 80 --batch 3
+
+Day 2-4: Let train complete (~10-12 hours)
+
+Day 5: Validate with optimal thresholds from Week 1
+       → Should reach ~68-72% F1
+
+───────────────────────────────────────────────────────────────────────
+
+WEEK 3: Fine-tuning
+───────────────────────────────────────────────────────────────────────
+Day 1: Aggressive augmentation
+       python train_vm.py --weights best.pt --epochs 50 \
+         --rotate 30.0 --scale 0.9
+
+Day 2-3: Let train complete
+
+Day 4: Test all threshold combinations
+       → Find absolute best configuration
+       → Should reach ~70-75% F1
+
+═══════════════════════════════════════════════════════════════════════
+
+💻 COMPLETE COMMANDS TO TRY
+
+OPTION A: Continue Training (Easiest)
+───────────────────────────────────────────────────────────────────────
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 100 \
+  --batch 4 \
+  --imgsz 2048 \
+  --rotate 15.0 \
+  --scale 0.7 \
+  --translate 0.15 \
+  --fliplr 0.6 \
+  --hsv-s 0.8 \
+  --hsv-v 0.5 \
+  --mosaic 1.0
+
+───────────────────────────────────────────────────────────────────────
+
+OPTION B: Medium Model + More Epochs (RECOMMENDED!)
+───────────────────────────────────────────────────────────────────────
+# First, edit train_vm.py line 69:
+# MODEL = "yolo11m.pt"
+
+python train_vm.py \
+  --epochs 80 \
+  --batch 3 \
+  --imgsz 2048 \
+  --rotate 20.0 \
+  --scale 0.8 \
+  --translate 0.15 \
+  --fliplr 0.6 \
+  --hsv-s 0.9 \
+  --hsv-v 0.5 \
+  --mosaic 1.0
+
+───────────────────────────────────────────────────────────────────────
+
+OPTION C: Large Model (Maximum Quality)
+───────────────────────────────────────────────────────────────────────
+# Edit train_vm.py line 69:
+# MODEL = "yolo11l.pt"
+
+python train_vm.py \
+  --epochs 100 \
+  --batch 2 \
+  --imgsz 2048 \
+  --rotate 20.0 \
+  --scale 0.8 \
+  --translate 0.15 \
+  --fliplr 0.6 \
+  --hsv-s 0.9
+
+───────────────────────────────────────────────────────────────────────
+
+OPTION D: Reduce Image Size + More Aggressive Training
+───────────────────────────────────────────────────────────────────────
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 120 \
+  --batch 8 \
+  --imgsz 1280 \
+  --rotate 30.0 \
+  --scale 0.9 \
+  --translate 0.2 \
+  --fliplr 0.7 \
+  --hsv-h 0.05 \
+  --hsv-s 0.9 \
+  --hsv-v 0.6
+
+═══════════════════════════════════════════════════════════════════════
+
+🔍 DATA QUALITY CHECKS
+
+Before training more, verify data quality:
+
+CHECK 1: Label Accuracy
+───────────────────────────────────────────────────────────────────────
+# Visualize some predictions
+from ultralytics import YOLO
+model = YOLO('runs/yolov11_wildlife/weights/best.pt')
+
+# Predict on validation images
+results = model.predict(
+    source='../general_dataset/images/val',
+    conf=0.15,
+    save=True,
+    project='predictions',
+    name='check_labels'
+)
+
+# Check: predictions/check_labels/*.jpg
+# Are there obvious animals being missed?
+# Are labels correct in training data?
+
+───────────────────────────────────────────────────────────────────────
+
+CHECK 2: Class Distribution
+───────────────────────────────────────────────────────────────────────
+# Count instances per class
+import pandas as pd
+from pathlib import Path
+
+labels_dir = Path('../general_dataset/labels/train')
+class_counts = {i: 0 for i in range(6)}
+
+for label_file in labels_dir.glob('*.txt'):
+    with open(label_file) as f:
+        for line in f:
+            class_id = int(line.split()[0])
+            class_counts[class_id] += 1
+
+print("Class distribution:")
+for cls_id, count in class_counts.items():
+    print(f"  Class {cls_id}: {count} instances")
+
+# Are classes balanced?
+# Imbalanced classes can hurt performance
+
+───────────────────────────────────────────────────────────────────────
+
+CHECK 3: Per-Class Performance in Wandb
+───────────────────────────────────────────────────────────────────────
+Look at your Wandb dashboard:
+  • test/Buffalo_mAP50
+  • test/Elephant_mAP50
+  • test/Kudu_mAP50
+  • test/Topi_mAP50
+  • test/Warthog_mAP50
+  • test/Waterbuck_mAP50
+
+Which species has lowest mAP50?
+→ That species needs more attention (check labels, add more examples)
+
+═══════════════════════════════════════════════════════════════════════
+
+⚙️ HYPERPARAMETER TUNING
+
+If still not improving after above:
+
+CREATE: tune_hyperparameters.py
+───────────────────────────────────────────────────────────────────────
+from ultralytics import YOLO
+import wandb
+
+# Login to wandb
+wandb.login()
+
+# Try different hyperparameters
+configs = [
+    {'lr0': 0.001, 'lrf': 0.01, 'momentum': 0.937, 'weight_decay': 0.0005},
+    {'lr0': 0.002, 'lrf': 0.01, 'momentum': 0.937, 'weight_decay': 0.0005},
+    {'lr0': 0.001, 'lrf': 0.001, 'momentum': 0.95, 'weight_decay': 0.0005},
+]
+
+for i, config in enumerate(configs):
+    print(f"\n{'='*70}")
+    print(f"TRAINING WITH CONFIG {i+1}")
+    print(f"{'='*70}")
+    
+    model = YOLO('yolo11s.pt')
+    model.train(
+        data='../general_dataset/data.yaml',
+        epochs=50,
+        imgsz=2048,
+        batch=4,
+        project='hyperparameter_tuning',
+        name=f'config_{i+1}',
+        **config
+    )
+
+# Compare in Wandb to find best config
+
+═══════════════════════════════════════════════════════════════════════
+
+📈 EXPECTED IMPROVEMENTS
+
+Starting Point: F1 = 58%, P = 74%, R = 47%
+
+After Action 1 (Lower conf threshold):
+  F1 = 62-65%, P = 68%, R = 60%
+  Time: Minutes
+  
+After Action 2 (More epochs):
+  F1 = 65-68%, P = 72%, R = 63%
+  Time: 5-8 hours
+
+After Action 3 (Larger model):
+  F1 = 68-73%, P = 75%, R = 67%
+  Time: 10-15 hours
+
+After Action 4 (Aggressive aug):
+  F1 = 70-75%, P = 76%, R = 70%
+  Time: 8-12 hours
+
+All Combined:
+  F1 = 73-78%, P = 78%, R = 72%
+  Time: 20-30 hours total
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ RECOMMENDED ACTION PLAN (PRIORITY ORDER)
+
+1. ⭐ FIRST: Test confidence thresholds (10 minutes)
+   → Might solve problem immediately!
+
+2. ⭐ Continue training with more epochs (5 hours)
+   → Easy win, just more training time
+
+3. ⭐ Switch to yolo11m model (12 hours)
+   → Biggest single improvement
+
+4. Try aggressive augmentation (8 hours)
+   → If still not at target
+
+5. Fine-tune thresholds (30 minutes)
+   → Final optimization
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 IMMEDIATE NEXT STEPS
+
+RIGHT NOW:
+1. Test confidence thresholds with current model
+   (See ACTION 1 code above)
+
+2. Start training with more epochs:
+   python train_vm.py --weights best.pt --epochs 100 --batch 4 \
+     --rotate 15.0 --scale 0.7
+
+3. While training, check per-class metrics in Wandb
+   → Identify which species are problematic
+
+TOMORROW:
+4. Evaluate new model
+5. If still < 70%, switch to yolo11m and retrain
+
+═══════════════════════════════════════════════════════════════════════
+
+💡 PRO TIPS
+
+1. Don't Change Everything at Once
+   → Change one thing, measure impact
+   → Use Wandb to compare
+
+2. Patience
+   → Models improve significantly between 50-100 epochs
+   → Let it train overnight
+
+3. Lower Confidence First
+   → Easiest fix for low recall
+   → Test before training more
+
+4. Monitor Per-Class Metrics
+   → Some species might be dragging average down
+   → Focus on weakest classes
+
+5. Save Everything
+   → Keep all checkpoints
+   → You might want to compare later
+
+═══════════════════════════════════════════════════════════════════════
+
+Status: ✅ Action Plan Ready
+Target: F1 > 70% (achievable!)
+Time: 1-3 days depending on approach
+
+Good luck! 🚀📈
+
+═══════════════════════════════════════════════════════════════════════
+

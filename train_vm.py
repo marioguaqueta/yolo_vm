@@ -66,7 +66,7 @@ class Config:
     }
     
     # Training hyperparameters
-    MODEL = "yolo11s.pt"  # Starting model (use yolo11s/m/l/x.pt for regular bounding boxes)
+    MODEL = "yolo11m.pt"  # Starting model (use yolo11s/m/l/x.pt for regular bounding boxes)
     EPOCHS = 50
     BATCH_SIZE = 4 if torch.cuda.is_available() else 2  # Reduced for 2048px images
     IMG_SIZE = 2048  # High resolution for aerial images

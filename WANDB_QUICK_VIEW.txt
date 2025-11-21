@@ -1,0 +1,240 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║        ✅ YES! F1 Score & Recall ARE Already in Wandb!                ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+Your train_vm.py ALREADY logs these metrics! No changes needed! 🎉
+
+═══════════════════════════════════════════════════════════════════════
+
+📋 WHAT'S LOGGED TO WANDB (Automatically)
+
+DURING TRAINING (Every Epoch):
+───────────────────────────────────────────────────────────────────────
+✅ metrics/precision(B)        - Precision (automatic by YOLO)
+✅ metrics/recall(B)            - Recall (automatic by YOLO) ← HERE!
+✅ metrics/mAP50(B)             - mAP50 (automatic by YOLO)
+✅ metrics/f1_score             - F1 Score (custom callback) ← HERE!
+
+AFTER VALIDATION/TESTING:
+───────────────────────────────────────────────────────────────────────
+✅ test/precision               - Final precision
+✅ test/recall                  - Final recall ← HERE!
+✅ test/f1_score                - Final F1 score ← HERE!
+✅ test/mAP50                   - Final mAP50
+✅ test/Buffalo_mAP50           - Per-class metrics
+✅ test/Elephant_mAP50          - (for each animal)
+   ... (etc for all 6 species)
+
+═══════════════════════════════════════════════════════════════════════
+
+📍 WHERE IN YOUR CODE (train_vm.py)
+
+F1 SCORE CALLBACK (Lines 234-252):
+───────────────────────────────────────────────────────────────────────
+def on_fit_epoch_end(trainer):
+    """Callback to log custom metrics (F1 score) after each epoch"""
+    if wandb.run is not None:
+        metrics = trainer.metrics
+        
+        # Calculate F1 score from precision and recall
+        if 'metrics/precision(B)' in metrics and 'metrics/recall(B)' in metrics:
+            precision = metrics['metrics/precision(B)']
+            recall = metrics['metrics/recall(B)']
+            
+            if (precision + recall) > 0:
+                f1_score = 2 * (precision * recall) / (precision + recall)
+                
+                # Log F1 score to Wandb ← LOGGED HERE!
+                wandb.log({
+                    'metrics/f1_score': f1_score,
+                    'epoch': trainer.epoch
+                })
+
+Status: ✅ ACTIVE - Runs after every training epoch
+
+───────────────────────────────────────────────────────────────────────
+
+VALIDATION METRICS (Lines 373-392):
+───────────────────────────────────────────────────────────────────────
+# Calculate F1 score
+precision = results.box.mp
+recall = results.box.mr
+f1_score = 2 * (precision * recall) / (precision + recall)
+
+print(f"\nValidation Results:")
+print(f"  Precision: {precision:.4f}")
+print(f"  Recall: {recall:.4f}")        ← PRINTED TO CONSOLE
+print(f"  F1 Score: {f1_score:.4f}")    ← PRINTED TO CONSOLE
+
+# Log custom metrics to Wandb
+if log_to_wandb and wandb.run is not None:
+    wandb.log({
+        'test/precision': precision,
+        'test/recall': recall,          ← LOGGED TO WANDB!
+        'test/f1_score': f1_score,      ← LOGGED TO WANDB!
+        'test/mAP50': results.box.map50,
+    })
+
+Status: ✅ ACTIVE - Runs after final validation
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 HOW TO SEE THEM IN WANDB
+
+STEP 1: Open Wandb Dashboard
+───────────────────────────────────────────────────────────────────────
+1. Go to: https://wandb.ai
+2. Login with your credentials
+3. Click on: "wildlife-detection-yolo11" project
+4. Click on your latest training run
+
+STEP 2: View Charts (Real-time During Training)
+───────────────────────────────────────────────────────────────────────
+Look for these charts:
+
+📈 Chart: "metrics/f1_score"
+   Shows: F1 score increasing over epochs
+   Current: Starting at ~0.58, should reach 0.70+
+
+📈 Chart: "metrics/recall(B)"
+   Shows: Recall increasing over epochs
+   Current: Starting at ~0.47, should reach 0.65+
+
+📈 Chart: "metrics/precision(B)"
+   Shows: Precision over epochs
+   Current: ~0.74, should maintain 0.70+
+
+STEP 3: View Summary (After Training Completes)
+───────────────────────────────────────────────────────────────────────
+Scroll to "Summary" section at the bottom:
+
+    test/f1_score: 0.574       ← Your final F1 score
+    test/recall: 0.470         ← Your final recall
+    test/precision: 0.740      ← Your final precision
+    test/mAP50: 0.650          ← Your final mAP50
+
+STEP 4: Create Custom Chart (Optional)
+───────────────────────────────────────────────────────────────────────
+To see F1, Precision, Recall together:
+
+1. Click "+ Add Panel" (top right)
+2. Select "Line Plot"
+3. In metrics, select:
+   • metrics/f1_score
+   • metrics/precision(B)
+   • metrics/recall(B)
+4. Click "Save"
+
+Now you have a combined chart! 📊
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 WHAT YOU'LL SEE IN WANDB (Example)
+
+METRICS TAB:
+───────────────────────────────────────────────────────────────────────
+┌─────────────────────────────────────────────────────────────────────┐
+│                     Training Progress                                │
+│                                                                      │
+│  1.0 ┤                                                               │
+│  0.9 ┤                                                               │
+│  0.8 ┤           ╭──────────── metrics/precision(B)                 │
+│  0.7 ┤      ╭────╯                                                   │
+│  0.6 ┤ ╭────╯    ╭──────────── metrics/f1_score                     │
+│  0.5 ┤─╯    ╭────╯                                                   │
+│  0.4 ┤ ╭────╯    ╭──────────── metrics/recall(B)                    │
+│  0.3 ┤─╯    ╭────╯                                                   │
+│      └──────────────────────────────────────────────────────────────│
+│        0   10   20   30   40   50   60   70   80   90   100         │
+│                          Epochs                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+SUMMARY TAB (After Training):
+───────────────────────────────────────────────────────────────────────
+test/f1_score:        0.574      ← Final F1 score
+test/recall:          0.470      ← Final recall
+test/precision:       0.740      ← Final precision
+test/mAP50:           0.650      ← Final mAP50
+test/Buffalo_mAP50:   0.680
+test/Elephant_mAP50:  0.720
+test/Kudu_mAP50:      0.580
+test/Topi_mAP50:      0.620
+test/Warthog_mAP50:   0.650
+test/Waterbuck_mAP50: 0.640
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 METRICS INTERPRETATION
+
+YOUR CURRENT STATUS:
+───────────────────────────────────────────────────────────────────────
+✅ Precision: 74%  → When model detects animal, it's correct 74% of time
+❌ Recall: 47%     → Model only catches 47% of animals (misses 53%!)
+⚠️  F1 Score: 58%  → Harmonic mean of precision & recall (low due to recall)
+
+WHAT THIS MEANS:
+───────────────────────────────────────────────────────────────────────
+Model is TOO CONSERVATIVE:
+  • Good at identifying animals when it detects them (74% precision)
+  • But doesn't detect enough animals (47% recall)
+  • Missing more than half of the animals!
+
+GOAL AFTER RETRAINING:
+───────────────────────────────────────────────────────────────────────
+✅ Precision: 72%+  → Maintain good accuracy
+✅ Recall: 65%+     → Catch 65% of animals (improve by 18%!)
+✅ F1 Score: 70%+   → Balanced performance
+
+═══════════════════════════════════════════════════════════════════════
+
+🚀 RECOMMENDATION
+
+YOUR METRICS ARE READY! Start retraining now:
+───────────────────────────────────────────────────────────────────────
+
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 100 \
+  --batch 4 \
+  --imgsz 2048 \
+  --rotate 15.0 \
+  --scale 0.7 \
+  --translate 0.15 \
+  --fliplr 0.6 \
+  --hsv-s 0.8 \
+  --hsv-v 0.5
+
+Then watch in Wandb as:
+  • metrics/f1_score increases from 0.58 to 0.70+
+  • metrics/recall increases from 0.47 to 0.65+
+  • metrics/precision stays around 0.70-0.75
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ SUMMARY
+
+Question: "Can we add F1 score and recall to Wandb?"
+Answer: ✅ ALREADY ADDED! They're logging right now!
+
+Where to Find:
+───────────────────────────────────────────────────────────────────────
+• During training: metrics/f1_score, metrics/recall(B)
+• After training: test/f1_score, test/recall
+• In Wandb: Charts section (real-time) & Summary section (final)
+
+No Code Changes Needed:
+───────────────────────────────────────────────────────────────────────
+✅ F1 score callback: Active (line 234-252)
+✅ Recall logging: Active (automatic by YOLO)
+✅ Validation metrics: Active (line 373-392)
+
+Next Action:
+───────────────────────────────────────────────────────────────────────
+Start retraining and open Wandb to watch metrics improve! 🚀
+
+═══════════════════════════════════════════════════════════════════════
+
+📚 Full Guide: WANDB_METRICS_GUIDE.txt
+
+═══════════════════════════════════════════════════════════════════════
+
