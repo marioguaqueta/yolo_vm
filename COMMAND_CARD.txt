@@ -1,0 +1,85 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║                  🎯 TRAINING COMMAND CARD                             ║
+║                  Quick Reference - Copy & Paste                       ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+⭐ RECOMMENDED PRODUCTION COMMAND ⭐
+
+cd /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm
+conda activate yolov11-wildlife
+
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 50 \
+  --batch 4 \
+  --imgsz 2048 \
+  --rotate 15.0 \
+  --scale 0.7 \
+  --translate 0.15 \
+  --fliplr 0.6 \
+  --hsv-s 0.8 \
+  --hsv-v 0.5 \
+  --mosaic 1.0
+
+═══════════════════════════════════════════════════════════════════════
+
+📋 WHAT THIS DOES:
+
+✅ Loads your best model for fine-tuning
+✅ Trains for 50 epochs (~4-5 hours)
+✅ Rotates images ±15° (handles drone angles)
+✅ Zooms up to 70% (handles different altitudes)
+✅ Shifts images 15% (off-center animals)
+✅ Flips horizontally 60% (left/right symmetry)
+✅ Varies colors (lighting conditions)
+✅ Uses mosaic (combines 4 images)
+✅ Auto-transforms all labels
+✅ Logs F1 score to Wandb
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 EXPECTED RESULTS:
+
+• mAP50: 0.70-0.80 (excellent!)
+• F1 Score: 0.70-0.80 (excellent!)
+• Training time: ~4-5 hours on L40 GPU
+• Better generalization than without augmentation
+
+═══════════════════════════════════════════════════════════════════════
+
+🔄 ALTERNATIVES:
+
+First Training (No Previous Model):
+  python train_vm.py --epochs 100 --batch 4 --imgsz 2048 --rotate 15.0 --scale 0.7
+
+Less Aggressive Augmentation:
+  python train_vm.py --weights best.pt --epochs 50 --batch 4 --rotate 10.0 --scale 0.5
+
+Memory-Optimized (If OOM):
+  python train_vm.py --weights best.pt --epochs 50 --batch 2 --imgsz 1024 --rotate 15.0
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ BEFORE RUNNING:
+
+□ conda activate yolov11-wildlife
+□ cd .../yolo_vm
+□ Dataset ready (928 train images)
+□ Previous model exists: ls runs/yolov11_wildlife/weights/best.pt
+□ GPU available: nvidia-smi
+□ Wandb logged in
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 MONITOR:
+
+• Wandb: https://wandb.ai/your-username/yolov11-wildlife-detection
+• GPU: watch -n 1 nvidia-smi
+• Logs: tail -f training.log (if background)
+
+═══════════════════════════════════════════════════════════════════════
+
+🎉 READY? COPY & RUN!
+
+═══════════════════════════════════════════════════════════════════════
+

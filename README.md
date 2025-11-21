@@ -46,6 +46,8 @@ python train_vm.py --epochs 50 --batch 4
 | **`DISK_SPACE_FIX.md`** | Fix disk space issues | "No space left on device" |
 | **`LABELS_SETUP.md`** | CSV to YOLO label conversion guide | Label format issues |
 | **`CONDA_SETUP.md`** | Conda environment setup issues | Environment creation problems |
+| **`CUSTOM_WEIGHTS_GUIDE.txt`** | Use custom pretrained models | Fine-tuning from best.pt |
+| **`DATA_AUGMENTATION_GUIDE.txt`** | Data augmentation (rotation, zoom) | Increase training data variety |
 
 ### 📊 Monitoring & Metrics
 
@@ -141,6 +143,21 @@ python reorganize_to_yolo_structure.py
 # See: QUICK_START.txt
 conda activate yolov11-wildlife
 python train_vm.py --epochs 50 --batch 4
+```
+
+### Fine-tune from Previous Training
+
+```bash
+# See: CUSTOM_WEIGHTS_GUIDE.txt
+python train_vm.py --weights runs/yolov11_wildlife/weights/best.pt --epochs 30
+```
+
+### Use Data Augmentation
+
+```bash
+# See: DATA_AUGMENTATION_GUIDE.txt
+# Enable rotation (±15°) and increased zoom (80%)
+python train_vm.py --rotate 15.0 --scale 0.8 --epochs 50
 ```
 
 ### Fix "Images Not Found" Error
@@ -252,14 +269,24 @@ Options:
   --epochs N      Number of training epochs (default: 50)
   --batch N       Batch size (default: 4)
   --imgsz N       Image size in pixels (default: 2048)
+  --weights PATH  Path to custom pretrained model (e.g., best.pt)
   --no-wandb      Disable wandb logging
   --wandb-key K   Wandb API key for automated login
+  
+  # Data Augmentation (NEW!)
+  --rotate DEG    Rotation in degrees (e.g., 15.0 for ±15°)
+  --scale RATIO   Scale/zoom (0.0-1.0, default: 0.5)
+  --translate R   Translation (0.0-1.0, default: 0.1)
+  --fliplr PROB   Horizontal flip probability (0.0-1.0)
+  --hsv-h/s/v V   Color augmentation
 
 Examples:
   python train_vm.py
   python train_vm.py --epochs 100 --batch 8
   python train_vm.py --no-wandb --epochs 50
   python train_vm.py --wandb-key abc123 --epochs 50
+  python train_vm.py --weights runs/yolov11_wildlife/weights/best.pt --epochs 30
+  python train_vm.py --rotate 15.0 --scale 0.8 --epochs 50
 ```
 
 ---
@@ -427,7 +454,9 @@ Example:
 - ✅ GPU optimization (memory efficient)
 - ✅ Early stopping
 - ✅ Automatic checkpointing
-- ✅ Data augmentation
+- ✅ Custom pretrained model loading (fine-tuning)
+- ✅ Customizable data augmentation (rotation, zoom, flip, color)
+- ✅ Automatic label transformation (rotation/zoom/flip)
 - ✅ Mixed precision training
 - ✅ Comprehensive documentation
 - ✅ Error handling with clear messages

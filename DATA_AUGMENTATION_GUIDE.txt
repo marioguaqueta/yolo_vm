@@ -1,0 +1,475 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║                    DATA AUGMENTATION GUIDE                            ║
+║          Rotation, Zoom, and More - Labels Auto-Updated!             ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+🎉 GREAT NEWS: YOLO Handles Both Images AND Labels Automatically!
+
+When you rotate/zoom/transform images, YOLO automatically transforms
+the bounding box labels too! You don't need to worry about label sync.
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 QUICK START
+
+Enable Rotation (e.g., ±15 degrees):
+  python train_vm.py --rotate 15.0 --epochs 50
+
+Increase Zoom/Scale (e.g., 80%):
+  python train_vm.py --scale 0.8 --epochs 50
+
+Combine Multiple Augmentations:
+  python train_vm.py --rotate 15.0 --scale 0.8 --fliplr 0.7 --epochs 50
+
+═══════════════════════════════════════════════════════════════════════
+
+📋 ALL AUGMENTATION OPTIONS
+
+GEOMETRIC TRANSFORMATIONS (Rotation, Zoom, etc.):
+  --rotate DEGREES    Rotation range in degrees
+                      Example: --rotate 10.0 → rotates images ±10°
+                      Default: 0.0 (disabled for aerial images)
+                      Recommended: 10.0-30.0 for most cases
+
+  --scale RATIO       Scale/zoom augmentation
+                      Range: 0.0-1.0 (0.5 = up to 50% zoom in/out)
+                      Example: --scale 0.8 → up to 80% scale variation
+                      Default: 0.5
+                      Recommended: 0.5-0.9
+
+  --translate RATIO   Translation/shift augmentation
+                      Range: 0.0-1.0 (0.1 = up to 10% shift)
+                      Example: --translate 0.2 → up to 20% shift
+                      Default: 0.1
+                      Recommended: 0.1-0.2
+
+  --fliplr PROB       Horizontal flip probability
+                      Range: 0.0-1.0 (0.5 = 50% chance)
+                      Example: --fliplr 0.7 → 70% chance of flip
+                      Default: 0.5
+                      Recommended: 0.5-0.7
+
+COLOR TRANSFORMATIONS:
+  --hsv-h VALUE       HSV Hue augmentation
+                      Range: 0.0-1.0
+                      Default: 0.015
+                      Recommended: 0.01-0.05
+
+  --hsv-s VALUE       HSV Saturation augmentation
+                      Range: 0.0-1.0
+                      Default: 0.7
+                      Recommended: 0.5-0.9
+
+  --hsv-v VALUE       HSV Value/Brightness augmentation
+                      Range: 0.0-1.0
+                      Default: 0.4
+                      Recommended: 0.3-0.6
+
+ADVANCED AUGMENTATIONS:
+  --mosaic PROB       Mosaic augmentation (combines 4 images)
+                      Range: 0.0-1.0
+                      Default: 1.0 (always applied)
+                      Recommended: 0.8-1.0
+
+═══════════════════════════════════════════════════════════════════════
+
+💡 WHAT EACH AUGMENTATION DOES
+
+🔄 ROTATION (--rotate)
+   • Rotates image by random angle within ±DEGREES
+   • Bounding boxes are automatically rotated too!
+   • Use case: Handle different camera orientations
+   • Example: Animal appears at different angles
+
+   ┌─────────────────────┬─────────────────────┐
+   │ Original            │ Rotated ±15°        │
+   ├─────────────────────┼─────────────────────┤
+   │   [Buffalo]         │     [Buffalo]       │
+   │   ┌─────┐           │    ╱────╲           │
+   │   │  🦬  │           │   │  🦬  │          │
+   │   └─────┘           │    ╲────╱           │
+   │                     │   (rotated + box)   │
+   └─────────────────────┴─────────────────────┘
+
+🔍 SCALE/ZOOM (--scale)
+   • Randomly zooms in/out
+   • Bounding boxes scale accordingly
+   • Use case: Handle different distances/altitudes
+   • Example: Animals at different distances from camera
+
+   ┌─────────────────────┬─────────────────────┐
+   │ Original            │ Zoomed In           │
+   ├─────────────────────┼─────────────────────┤
+   │  ┌────┐             │   ┌──────────┐      │
+   │  │ 🦁 │             │   │    🦁    │      │
+   │  └────┘             │   │  (closer)│      │
+   │                     │   └──────────┘      │
+   │  (small lion)       │  (larger lion)      │
+   └─────────────────────┴─────────────────────┘
+
+↔️ TRANSLATION (--translate)
+   • Randomly shifts image position
+   • Bounding boxes shift too
+   • Use case: Handle off-center subjects
+   • Example: Animal not in center of image
+
+   ┌─────────────────────┬─────────────────────┐
+   │ Original            │ Translated          │
+   ├─────────────────────┼─────────────────────┤
+   │    ┌───┐            │               ┌───┐ │
+   │    │ 🐘 │            │               │ 🐘 │ │
+   │    └───┘            │               └───┘ │
+   │  (centered)         │  (shifted right)    │
+   └─────────────────────┴─────────────────────┘
+
+↔️ FLIP (--fliplr)
+   • Randomly flips image horizontally
+   • Bounding boxes flip too
+   • Use case: Handle left/right symmetry
+   • Example: Animal facing different direction
+
+   ┌─────────────────────┬─────────────────────┐
+   │ Original            │ Flipped             │
+   ├─────────────────────┼─────────────────────┤
+   │  ┌───┐              │              ┌───┐  │
+   │  │ 🦓→│              │              │←🦓 │  │
+   │  └───┘              │              └───┘  │
+   │ (facing right)      │ (facing left)       │
+   └─────────────────────┴─────────────────────┘
+
+🎨 COLOR (--hsv-h, --hsv-s, --hsv-v)
+   • Randomly adjusts colors
+   • Labels unchanged (color doesn't affect boxes)
+   • Use case: Handle different lighting conditions
+   • Example: Morning vs evening lighting
+
+   ┌─────────────────────┬─────────────────────┐
+   │ Original            │ Color Adjusted      │
+   ├─────────────────────┼─────────────────────┤
+   │   Normal lighting   │  Different lighting │
+   │   ┌─────┐           │   ┌─────┐           │
+   │   │  🦏  │           │   │  🦏  │           │
+   │   └─────┘           │   └─────┘           │
+   │                     │  (darker/lighter)   │
+   └─────────────────────┴─────────────────────┘
+
+🧩 MOSAIC (--mosaic)
+   • Combines 4 images into one
+   • All bounding boxes preserved and scaled
+   • Use case: Learn from multiple contexts
+   • Example: Multiple species in one training sample
+
+   ┌─────────┬─────────┐
+   │  🦁     │    🦓   │  ← 4 images
+   ├─────────┼─────────┤     combined!
+   │    🐘   │  🦏     │     All boxes
+   └─────────┴─────────┘     kept & scaled
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ LABELS ARE AUTOMATICALLY UPDATED!
+
+YOLO's augmentation pipeline:
+  1. Apply transformation to image (rotate/zoom/etc.)
+  2. Apply SAME transformation to bounding boxes
+  3. Normalize coordinates (keep them 0.0-1.0)
+  4. Train on augmented image + transformed labels
+
+YOU DON'T NEED TO:
+  ❌ Manually rotate labels
+  ❌ Write custom augmentation code
+  ❌ Worry about label synchronization
+  ❌ Pre-generate augmented datasets
+
+YOLO DOES IT ALL:
+  ✅ Real-time augmentation during training
+  ✅ Automatic label transformation
+  ✅ Proper coordinate normalization
+  ✅ Efficient GPU acceleration
+
+═══════════════════════════════════════════════════════════════════════
+
+🎓 USAGE EXAMPLES
+
+Example 1: Enable Rotation for Aerial Images
+  python train_vm.py --rotate 15.0 --epochs 50
+
+  Result: Images rotated ±15°, boxes rotated too
+  Use case: Handle different drone orientations
+
+Example 2: Aggressive Zoom Augmentation
+  python train_vm.py --scale 0.9 --epochs 50
+
+  Result: Up to 90% scale variation
+  Use case: Simulate different altitudes
+
+Example 3: Multiple Augmentations
+  python train_vm.py \
+    --rotate 20.0 \
+    --scale 0.8 \
+    --translate 0.15 \
+    --fliplr 0.7 \
+    --epochs 50
+
+  Result: Heavy augmentation for robust model
+  Use case: Small dataset, need more variation
+
+Example 4: Conservative Augmentation
+  python train_vm.py \
+    --rotate 5.0 \
+    --scale 0.3 \
+    --translate 0.05 \
+    --epochs 50
+
+  Result: Mild augmentation, preserves original data
+  Use case: Large dataset, want to avoid overfitting
+
+Example 5: No Rotation (Current Default)
+  python train_vm.py --rotate 0.0 --epochs 50
+
+  Result: No rotation (good for strictly aerial views)
+  Use case: Drone always at same orientation
+
+Example 6: High Color Variation
+  python train_vm.py \
+    --hsv-h 0.05 \
+    --hsv-s 0.9 \
+    --hsv-v 0.6 \
+    --epochs 50
+
+  Result: More color variation
+  Use case: Different times of day, weather
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 RECOMMENDED SETTINGS
+
+FOR WILDLIFE AERIAL DETECTION (Your Case):
+
+CONSERVATIVE (Preserve aerial view):
+  python train_vm.py \
+    --rotate 0.0 \
+    --scale 0.5 \
+    --translate 0.1 \
+    --fliplr 0.5 \
+    --epochs 50
+
+MODERATE (Allow some rotation):
+  python train_vm.py \
+    --rotate 10.0 \
+    --scale 0.7 \
+    --translate 0.15 \
+    --fliplr 0.6 \
+    --epochs 50
+
+AGGRESSIVE (Maximum variation):
+  python train_vm.py \
+    --rotate 30.0 \
+    --scale 0.9 \
+    --translate 0.2 \
+    --fliplr 0.7 \
+    --mosaic 1.0 \
+    --epochs 50
+
+RECOMMENDED START:
+  python train_vm.py \
+    --rotate 15.0 \
+    --scale 0.7 \
+    --epochs 50
+
+  • 15° rotation: Enough for angle variation
+  • 70% scale: Good altitude/distance variation
+  • Default color/flip: Already well-configured
+
+═══════════════════════════════════════════════════════════════════════
+
+🔬 EXPERIMENTATION GUIDE
+
+Step 1: Train with Default Settings
+  python train_vm.py --epochs 50
+  → Baseline mAP: e.g., 0.65
+
+Step 2: Add Rotation
+  python train_vm.py --rotate 15.0 --epochs 50
+  → Compare mAP: Better? Worse?
+
+Step 3: Increase Scale
+  python train_vm.py --rotate 15.0 --scale 0.8 --epochs 50
+  → Compare mAP: Still improving?
+
+Step 4: Find Optimal
+  Try different combinations, track in Wandb
+  → Find configuration with best mAP
+
+Use Wandb to compare all runs!
+
+═══════════════════════════════════════════════════════════════════════
+
+⚙️ TECHNICAL DETAILS
+
+How YOLO Handles Augmentation:
+
+1. Image Transformation
+   - Apply rotation/scale/translation/flip to image pixels
+   - Use OpenCV/PIL for fast GPU-accelerated transforms
+
+2. Label Transformation (Automatic!)
+   - Original: x_center, y_center, width, height (normalized)
+   - Apply same transform matrix to box corners
+   - Convert back to x_center, y_center, width, height
+   - Re-normalize to 0.0-1.0 range
+   - Clip to image boundaries
+
+3. Example: 15° Rotation
+   Before: class_id 0.5 0.5 0.2 0.1
+           (box at center, 20% wide, 10% tall)
+   
+   After rotation:
+           class_id 0.52 0.48 0.22 0.12
+           (box rotated, slightly different center/size)
+
+4. Validation (During Training)
+   - YOLO checks if box is still valid
+   - Removes boxes that became too small
+   - Removes boxes outside image boundaries
+   - Ensures no degenerate boxes
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 CURRENT DEFAULT VALUES
+
+Check your current settings (without any flags):
+
+  DEGREES   = 0.0   (No rotation)
+  SCALE     = 0.5   (50% scale variation)
+  TRANSLATE = 0.1   (10% translation)
+  HSV_H     = 0.015 (Minimal hue change)
+  HSV_S     = 0.7   (High saturation variation)
+  HSV_V     = 0.4   (Moderate brightness variation)
+  FLIPLR    = 0.5   (50% horizontal flip)
+  MOSAIC    = 1.0   (Always apply mosaic)
+
+To see augmentation settings during training:
+
+  python train_vm.py --epochs 1
+  
+  Output shows:
+    Data Augmentation:
+      Rotation: ±0.0° (disabled)
+      Scale/Zoom: 50%
+      Translation: 10%
+      ...
+
+═══════════════════════════════════════════════════════════════════════
+
+📈 BENEFITS OF AUGMENTATION
+
+1. Effective Dataset Size
+   1,000 images → With augmentation: ~10,000+ variations!
+
+2. Better Generalization
+   Model learns to handle various conditions:
+   - Different angles
+   - Different distances
+   - Different lighting
+   - Different positions
+
+3. Reduced Overfitting
+   More variation → Less memorization → Better performance
+
+4. Robustness
+   Model works better on:
+   - New images
+   - Different drones
+   - Different times of day
+   - Different weather conditions
+
+═══════════════════════════════════════════════════════════════════════
+
+⚠️ WARNINGS
+
+1. Too Much Augmentation Can Hurt!
+   - If rotation too high (e.g., 180°): Upside-down animals
+   - If scale too high (e.g., 1.0): Extreme zoom distorts features
+   - Balance is key!
+
+2. Aerial Images Are Special
+   - Usually oriented upright
+   - Large rotations (>30°) may not make sense
+   - Consider your drone/camera setup
+
+3. Monitor Training
+   - Watch mAP in Wandb
+   - If mAP drops with augmentation: Reduce it
+   - If mAP improves: Keep or increase slightly
+
+4. Training Time
+   - More augmentation = More compute per image
+   - Slightly longer training (usually negligible)
+   - Benefits outweigh the small cost
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ VERIFICATION
+
+To verify augmentation is working:
+
+1. Check training output:
+   Data Augmentation:
+     Rotation: ±15.0°
+     Scale/Zoom: 80%
+     ...
+
+2. Look at augmented images:
+   After training, check: runs/yolov11_wildlife/
+   YOLO saves sample augmented images there
+
+3. Monitor Wandb:
+   Wandb shows augmented sample images during training
+
+4. Watch GPU usage:
+   Augmentation happens on-the-fly, so GPU stays busy
+
+═══════════════════════════════════════════════════════════════════════
+
+🚀 QUICK START COMMAND
+
+Best settings for wildlife aerial detection:
+
+python train_vm.py \
+  --rotate 15.0 \
+  --scale 0.7 \
+  --translate 0.15 \
+  --fliplr 0.6 \
+  --epochs 50 \
+  --batch 4
+
+This enables:
+  ✅ Rotation for angle variation
+  ✅ Zoom for altitude variation
+  ✅ Translation for position variation
+  ✅ Flipping for left/right symmetry
+  ✅ All labels automatically updated!
+
+═══════════════════════════════════════════════════════════════════════
+
+📚 MORE INFORMATION
+
+See also:
+  - COMPLETE_SETUP_GUIDE.md - Full training guide
+  - QUICK_START.txt - Quick command reference
+  - README.md - Documentation index
+
+For Ultralytics YOLO augmentation docs:
+  https://docs.ultralytics.com/modes/train/#augmentation-settings
+
+═══════════════════════════════════════════════════════════════════════
+
+Status: ✅ Feature Implemented
+Last Updated: 2025-11-20
+Version: 2.2
+
+Happy augmenting! 🎨🔄📊
+
+═══════════════════════════════════════════════════════════════════════
+

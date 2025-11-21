@@ -1,0 +1,315 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║           DATASET USAGE VERIFICATION - Train vs Val                   ║
+║              Understanding the 928 vs 111 Numbers                     ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+✅ YOUR NUMBERS ARE CORRECT! Here's why:
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 YOUR DATASET SPLIT
+
+Training Set:   928 images  → Used for TRAINING (learning)
+Validation Set: 111 images  → Used for VALIDATION (evaluation)
+Test Set:       258 images  → Used for FINAL TESTING
+
+Total:        1,297 images
+
+═══════════════════════════════════════════════════════════════════════
+
+🔍 UNDERSTANDING THE LOG
+
+Your log shows:
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ Epoch 16/20 ... 232/232 batches                                     │
+│   → TRAINING: Uses 928 images                                       │
+│   → 928 images ÷ 4 (batch size) = 232 batches ✅                   │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ Class     Images  Instances  Box(P   R   mAP50  mAP50-95)          │
+│ all       111     978        0.741   0.472  0.53  0.253            │
+│   → VALIDATION: Uses 111 images                                     │
+│   → 111 images with 978 animal detections ✅                        │
+└─────────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ VERIFICATION: Are All 928 Training Images Used?
+
+Yes! Here's the math:
+
+Training Batches = Total Training Images ÷ Batch Size
+                 = 928 ÷ 4
+                 = 232 batches ✅
+
+Your log shows: "232/232 batches" → All 928 images are being used!
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 HOW YOLO TRAINING WORKS
+
+EACH EPOCH:
+
+Step 1: TRAINING PHASE (uses train/ folder)
+   • Loads images from images/train/ (928 images)
+   • Divides into batches (232 batches of 4 images each)
+   • Trains the model on these images
+   • Updates model weights
+   • Progress bar: "232/232 batches"
+
+Step 2: VALIDATION PHASE (uses val/ folder)
+   • Loads images from images/val/ (111 images)
+   • Evaluates model performance (no training)
+   • Calculates metrics: mAP50, Precision, Recall, F1
+   • Shows: "Images: 111"
+   • Shows: "Instances: 978" (total animals in 111 images)
+
+Step 3: Repeat for next epoch
+
+═══════════════════════════════════════════════════════════════════════
+
+📋 VERIFY ON YOUR SYSTEM
+
+Check image counts:
+
+# Training images (should be 928)
+ls ../general_dataset/images/train/*.JPG | wc -l
+# Output: 928 ✅
+
+# Validation images (should be 111)
+ls ../general_dataset/images/val/*.JPG | wc -l
+# Output: 111 ✅
+
+# Test images (should be 258)
+ls ../general_dataset/images/test/*.JPG | wc -l
+# Output: 258 ✅
+
+Check label counts (should match):
+
+# Training labels (should be 928)
+ls ../general_dataset/labels/train/*.txt | wc -l
+# Output: 928 ✅
+
+# Validation labels (should be 111)
+ls ../general_dataset/labels/val/*.txt | wc -l
+# Output: 111 ✅
+
+═══════════════════════════════════════════════════════════════════════
+
+🔢 CALCULATE EXPECTED BATCHES
+
+Your Configuration:
+  • Batch size: 4 (from --batch 4)
+  • Training images: 928
+  • Expected batches: 928 ÷ 4 = 232
+
+Your Log Shows:
+  • "232/232 batches" ✅ CORRECT!
+
+If you had different batch sizes:
+  • --batch 2:  928 ÷ 2 = 464 batches
+  • --batch 4:  928 ÷ 4 = 232 batches ✅ (your case)
+  • --batch 8:  928 ÷ 8 = 116 batches
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 UNDERSTANDING THE VALIDATION METRICS
+
+Your validation shows:
+
+Images: 111
+  → Number of validation images evaluated
+  → From images/val/ folder
+
+Instances: 978
+  → Total number of animals (bounding boxes) in those 111 images
+  → Average: 978 ÷ 111 ≈ 8.8 animals per image
+
+Box(P): 0.741
+  → Precision: 74.1% of detections are correct
+  → Pretty good!
+
+R: 0.472
+  → Recall: 47.2% of animals found
+  → Could be better (might need to lower confidence threshold)
+
+mAP50: 0.53
+  → Mean Average Precision at 0.5 IoU
+  → Moderate performance (target: > 0.65)
+
+mAP50-95: 0.253
+  → Stricter mAP (averaged from 0.5 to 0.95 IoU)
+  → Lower is expected (this metric is very strict)
+
+═══════════════════════════════════════════════════════════════════════
+
+🎓 WHY SEPARATE TRAIN AND VALIDATION?
+
+TRAINING SET (928 images):
+  • Used to TEACH the model
+  • Model sees these during training
+  • Weights updated based on these images
+  • More images = better learning
+
+VALIDATION SET (111 images):
+  • Used to EVALUATE the model
+  • Model never trains on these
+  • Unbiased performance estimate
+  • Detects overfitting
+
+TEST SET (258 images):
+  • Used for FINAL evaluation
+  • Run once at the very end
+  • Most unbiased estimate
+  • Report these results in papers/reports
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ WHAT TO CHECK IF NUMBERS SEEM WRONG
+
+If training batches don't match expected:
+
+EXPECTED: 928 ÷ batch_size
+ACTUAL: Number shown in "X/X batches"
+
+If they don't match:
+  1. Check batch size in command or config
+  2. Check number of training images
+  3. Check for data loading errors in logs
+
+Example Checks:
+
+# Case 1: Correct (your case)
+Training images: 928
+Batch size: 4
+Expected batches: 232
+Log shows: 232/232 ✅
+
+# Case 2: Wrong batch size
+Training images: 928  
+Batch size: 8 (accidentally set)
+Expected batches: 116
+Log shows: 116/116 (not 232) ❌
+
+# Case 3: Missing images
+Training images: 500 (some missing!)
+Batch size: 4
+Expected batches: 125
+Log shows: 125/125 (not 232) ❌
+
+═══════════════════════════════════════════════════════════════════════
+
+📈 YOUR METRICS INTERPRETATION
+
+Based on your log (Epoch 16/20):
+
+Training:
+  ✅ 232 batches = Using all 928 training images
+  ✅ No data loading issues
+
+Validation:
+  ✅ 111 images = Correct validation set
+  ✅ 978 instances = ~8.8 animals per image (reasonable)
+  ⚠️  mAP50: 0.53 (moderate, could improve)
+  ⚠️  Recall: 0.472 (finding only 47% of animals)
+
+Recommendations:
+  • Continue training (you're only at epoch 16/20)
+  • Consider increasing epochs beyond 20
+  • After training, lower confidence threshold if recall is low
+  • Use augmentation to improve generalization
+
+═══════════════════════════════════════════════════════════════════════
+
+🔍 DETAILED LOG BREAKDOWN
+
+Your full log line by line:
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ Epoch 16/20                                                          │
+│   → Currently on epoch 16 out of 20 total                           │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ GPU_mem: 14G                                                         │
+│   → Using 14GB of 24GB GPU memory (good utilization)                │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ box_loss: 2.067, cls_loss: 2.14, dfl_loss: 1.028                   │
+│   → Training losses (should decrease over epochs)                   │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ Instances: 11                                                        │
+│   → Average 11 instances per batch during training                  │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ Size: 2048                                                           │
+│   → Training with 2048x2048 pixel images                            │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ 232/232 batches, 4.5it/s, 51.6s                                     │
+│   → Processed all 232 batches (928 images)                          │
+│   → Speed: 4.5 iterations/second                                    │
+│   → Time: 51.6 seconds for this epoch                               │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ Validation: 14/14 batches, 8.7it/s, 1.6s                           │
+│   → 111 validation images ÷ 8 images per val batch ≈ 14 batches    │
+│   → Speed: 8.7 iterations/second (validation faster)                │
+│   → Time: 1.6 seconds for validation                                │
+└─────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ all: 111 images, 978 instances                                      │
+│   → Validated on 111 images                                         │
+│   → Found 978 total animal instances                                │
+│   → Metrics: P=0.741, R=0.472, mAP50=0.53, mAP50-95=0.253          │
+└─────────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════
+
+💡 QUICK ANSWER TO YOUR QUESTION
+
+Q: "Why does train folder have 928 elements but log shows 111?"
+
+A: Because:
+  • 928 images = TRAINING set (used during "232/232 batches" phase)
+  • 111 images = VALIDATION set (shown in metrics line)
+  • These are TWO DIFFERENT sets of images!
+  • YOLO trains on 928, then validates on separate 111
+  • This is the correct way to do machine learning!
+
+Your training IS using all 928 images! ✅
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ SUMMARY
+
+Everything is working correctly:
+
+✅ Training uses 928 images (232 batches × 4 images/batch)
+✅ Validation uses 111 images (separate set for evaluation)
+✅ All images are being used properly
+✅ No data loading issues
+✅ Standard machine learning practice
+
+You can verify with:
+  ls ../general_dataset/images/train/*.JPG | wc -l  # 928
+  ls ../general_dataset/images/val/*.JPG | wc -l    # 111
+
+Both are being used, just at different stages! ✅
+
+═══════════════════════════════════════════════════════════════════════
+
+Status: ✅ Your dataset is configured correctly!
+Nothing to fix! This is expected behavior!
+
+═══════════════════════════════════════════════════════════════════════
+

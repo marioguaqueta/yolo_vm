@@ -1,0 +1,99 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║            QUICK REFERENCE: Data Augmentation Options                ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+✅ YOLO automatically transforms images AND labels together!
+   You don't need to manually handle label rotation/scaling.
+
+═══════════════════════════════════════════════════════════════════════
+
+⚡ QUICK COMMANDS
+
+Enable Rotation (±15°):
+  python train_vm.py --rotate 15.0
+
+Increase Zoom (80%):
+  python train_vm.py --scale 0.8
+
+Combine Multiple:
+  python train_vm.py --rotate 15.0 --scale 0.8 --fliplr 0.7
+
+═══════════════════════════════════════════════════════════════════════
+
+📋 ALL OPTIONS
+
+GEOMETRIC:
+  --rotate DEGREES     Rotation (0.0 = off, try 10.0-30.0)
+  --scale RATIO        Scale/zoom (0.0-1.0, default: 0.5)
+  --translate RATIO    Translation (0.0-1.0, default: 0.1)
+  --fliplr PROB        Horizontal flip (0.0-1.0, default: 0.5)
+
+COLOR:
+  --hsv-h VALUE        Hue (default: 0.015)
+  --hsv-s VALUE        Saturation (default: 0.7)
+  --hsv-v VALUE        Brightness (default: 0.4)
+
+ADVANCED:
+  --mosaic PROB        Mosaic (default: 1.0)
+
+═══════════════════════════════════════════════════════════════════════
+
+💡 WHAT THEY DO
+
+--rotate 15.0        → Rotates images ±15° (boxes rotate too!)
+--scale 0.8          → Up to 80% zoom in/out (boxes scale too!)
+--translate 0.2      → Shifts image up to 20% (boxes shift too!)
+--fliplr 0.7         → 70% chance to flip left/right (boxes flip too!)
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 RECOMMENDED FOR WILDLIFE
+
+Conservative (Preserve orientation):
+  python train_vm.py --rotate 0.0 --scale 0.5
+
+Moderate (Recommended):
+  python train_vm.py --rotate 15.0 --scale 0.7
+
+Aggressive (Maximum variation):
+  python train_vm.py --rotate 30.0 --scale 0.9 --translate 0.2
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 EXAMPLES
+
+Basic training:
+  python train_vm.py --epochs 50
+
+With rotation:
+  python train_vm.py --rotate 15.0 --epochs 50
+
+Multiple augmentations:
+  python train_vm.py --rotate 15.0 --scale 0.8 --fliplr 0.7 --epochs 50
+
+Full configuration:
+  python train_vm.py \
+    --rotate 20.0 \
+    --scale 0.8 \
+    --translate 0.15 \
+    --fliplr 0.6 \
+    --hsv-s 0.8 \
+    --epochs 50
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ BENEFITS
+
+• More training variations without collecting more data
+• Better generalization (works on new images)
+• Reduced overfitting
+• Labels automatically transformed!
+
+═══════════════════════════════════════════════════════════════════════
+
+📚 FULL GUIDE
+
+See: DATA_AUGMENTATION_GUIDE.txt for complete documentation
+
+═══════════════════════════════════════════════════════════════════════
+

@@ -1,0 +1,450 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║              WANDB METRICS GUIDE - Complete Reference                ║
+║                  All Metrics, Charts, and F1 Score                    ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+✅ NEW: F1 Score is now automatically logged every epoch!
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 ALL METRICS LOGGED TO WANDB
+
+PERFORMANCE METRICS (Main metrics to watch):
+  ✅ metrics/mAP50           - Mean Average Precision @ 0.5 IoU
+  ✅ metrics/mAP50-95         - Mean Average Precision @ 0.5:0.95 IoU
+  ✅ metrics/precision        - Overall Precision
+  ✅ metrics/recall           - Overall Recall
+  ✅ metrics/f1_score         - F1 Score (NEW! Custom added)
+
+TRAINING LOSSES:
+  ✅ train/box_loss           - Bounding box regression loss
+  ✅ train/cls_loss           - Classification loss
+  ✅ train/dfl_loss           - Distribution focal loss
+
+VALIDATION LOSSES:
+  ✅ val/box_loss             - Validation box loss
+  ✅ val/cls_loss             - Validation classification loss
+  ✅ val/dfl_loss             - Validation DFL loss
+
+LEARNING RATES:
+  ✅ lr/pg0                   - Learning rate parameter group 0
+  ✅ lr/pg1                   - Learning rate parameter group 1
+  ✅ lr/pg2                   - Learning rate parameter group 2
+
+TEST METRICS (After training):
+  ✅ test/mAP50               - Test set mAP50
+  ✅ test/mAP50-95            - Test set mAP50-95
+  ✅ test/precision           - Test set Precision
+  ✅ test/recall              - Test set Recall
+  ✅ test/f1_score            - Test set F1 Score (NEW!)
+
+PER-CLASS METRICS (NEW!):
+  ✅ test/Buffalo_mAP50       - Buffalo mAP50
+  ✅ test/Elephant_mAP50      - Elephant mAP50
+  ✅ test/Kudu_mAP50          - Kudu mAP50
+  ✅ test/Topi_mAP50          - Topi mAP50
+  ✅ test/Warthog_mAP50       - Warthog mAP50
+  ✅ test/Waterbuck_mAP50     - Waterbuck mAP50
+
+SYSTEM METRICS:
+  ✅ epoch                    - Current epoch number
+  ✅ _timestamp               - Wall clock time
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 KEY METRICS EXPLAINED
+
+📈 mAP50 (Mean Average Precision @ IoU=0.5)
+   What: Measures detection accuracy
+   Range: 0.0 to 1.0 (higher is better)
+   Target: > 0.5 (good), > 0.7 (excellent)
+   
+   How to interpret:
+   - 0.65 = Model correctly detects 65% of animals
+   - Primary metric for object detection
+   - Most important single metric
+
+📉 mAP50-95 (Mean Average Precision @ IoU=0.5:0.95)
+   What: Stricter version of mAP50, averages IoU from 0.5 to 0.95
+   Range: 0.0 to 1.0 (higher is better)
+   Target: > 0.3 (good), > 0.5 (excellent)
+   
+   How to interpret:
+   - More challenging than mAP50
+   - Rewards precise bounding boxes
+   - Used in competitions (e.g., COCO)
+
+🎯 Precision
+   What: Percentage of correct positive predictions
+   Formula: TP / (TP + FP)
+   Range: 0.0 to 1.0 (higher is better)
+   Target: > 0.6 (good), > 0.8 (excellent)
+   
+   How to interpret:
+   - 0.80 = 80% of detections are correct
+   - High precision = few false positives
+   - Important when false alarms are costly
+
+🔍 Recall
+   What: Percentage of actual objects detected
+   Formula: TP / (TP + FN)
+   Range: 0.0 to 1.0 (higher is better)
+   Target: > 0.5 (good), > 0.7 (excellent)
+   
+   How to interpret:
+   - 0.75 = Found 75% of all animals
+   - High recall = few missed detections
+   - Important when missing objects is costly
+
+⚖️ F1 Score (NEW!)
+   What: Harmonic mean of Precision and Recall
+   Formula: 2 * (Precision * Recall) / (Precision + Recall)
+   Range: 0.0 to 1.0 (higher is better)
+   Target: > 0.6 (good), > 0.75 (excellent)
+   
+   How to interpret:
+   - Balances Precision and Recall
+   - 0.70 = Good balance between finding objects and being accurate
+   - Useful when you care about both metrics equally
+
+📦 box_loss
+   What: How well bounding boxes fit objects
+   Range: Lower is better (typically 0.5-2.0 at start, <0.5 at end)
+   
+   How to interpret:
+   - Should decrease over training
+   - Plateau = boxes fitting well
+   - Increase = overfitting or learning rate too high
+
+🏷️ cls_loss
+   What: How well model classifies objects
+   Range: Lower is better
+   
+   How to interpret:
+   - Should decrease over training
+   - Low value = confident correct classifications
+
+═══════════════════════════════════════════════════════════════════════
+
+💻 HOW TO VIEW METRICS IN WANDB
+
+STEP 1: Access Wandb Dashboard
+   During training, you'll see:
+     ✓ Wandb initialized
+       Project: yolov11-wildlife-detection
+       Dashboard: https://wandb.ai/your-username/yolov11-wildlife-detection/runs/...
+   
+   Click that URL!
+
+STEP 2: Navigate to Charts Tab
+   • Click "Charts" or "Workspace" in the left sidebar
+   • You'll see all metrics graphed in real-time
+
+STEP 3: Find F1 Score
+   • Look for chart titled "metrics/f1_score"
+   • Or search for "f1" in the search box
+   • Should appear alongside precision and recall
+
+STEP 4: Customize Charts
+   • Click "+ Add panel" to create custom charts
+   • Select metrics to compare
+   • Choose visualization type (line, bar, scatter)
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 RECOMMENDED CHARTS TO CREATE
+
+CHART 1: Performance Overview
+  Metrics: mAP50, mAP50-95, F1 Score
+  Type: Line chart
+  Why: Track overall model performance
+
+CHART 2: Precision vs Recall
+  Metrics: precision, recall
+  Type: Line chart
+  Why: See trade-off between precision and recall
+
+CHART 3: Training Losses
+  Metrics: train/box_loss, train/cls_loss, train/dfl_loss
+  Type: Line chart
+  Why: Monitor training convergence
+
+CHART 4: Validation Losses
+  Metrics: val/box_loss, val/cls_loss
+  Type: Line chart
+  Why: Detect overfitting (if val loss increases)
+
+CHART 5: Per-Class Performance
+  Metrics: test/Buffalo_mAP50, test/Elephant_mAP50, ... (all 6 classes)
+  Type: Bar chart
+  Why: See which species are hard to detect
+
+CHART 6: Learning Rates
+  Metrics: lr/pg0, lr/pg1, lr/pg2
+  Type: Line chart
+  Why: Monitor learning rate schedule
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 HOW TO CREATE CUSTOM CHARTS
+
+1. Go to your Wandb dashboard
+2. Click "+ Add visualization" or "+ Add panel"
+3. Select "Line Plot" or "Bar Chart"
+4. Choose X-axis: "Step" or "epoch"
+5. Choose Y-axis: Select your metric (e.g., "metrics/f1_score")
+6. Add multiple Y-axes to compare metrics
+7. Click "Save"
+
+EXAMPLE: F1 Score Chart
+  1. Click "+ Add visualization"
+  2. Select "Line Plot"
+  3. X-axis: "epoch"
+  4. Y-axis: "metrics/f1_score"
+  5. Add more: "metrics/precision", "metrics/recall"
+  6. Title: "F1 Score and Components"
+  7. Save!
+
+═══════════════════════════════════════════════════════════════════════
+
+📈 EXAMPLE TRAINING PROGRESSION
+
+Epoch 1:
+  mAP50: 0.15 (low - just starting)
+  Precision: 0.30
+  Recall: 0.20
+  F1 Score: 0.24
+
+Epoch 10:
+  mAP50: 0.45 (improving)
+  Precision: 0.60
+  Recall: 0.50
+  F1 Score: 0.55
+
+Epoch 25:
+  mAP50: 0.62 (good)
+  Precision: 0.75
+  Recall: 0.68
+  F1 Score: 0.71
+
+Epoch 50:
+  mAP50: 0.70 (excellent!)
+  Precision: 0.82
+  Recall: 0.75
+  F1 Score: 0.78
+
+This shows healthy improvement over training!
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ WHAT TO LOOK FOR
+
+GOOD SIGNS:
+  ✅ mAP50 steadily increasing
+  ✅ Losses steadily decreasing
+  ✅ Precision and Recall both improving
+  ✅ F1 Score increasing (balanced improvement)
+  ✅ Val losses tracking train losses
+
+BAD SIGNS:
+  ❌ mAP50 plateauing too early (undertraining)
+  ❌ Val loss increasing while train loss decreasing (overfitting)
+  ❌ Precision high but recall low (missing many objects)
+  ❌ Recall high but precision low (too many false positives)
+  ❌ Losses oscillating wildly (learning rate too high)
+
+═══════════════════════════════════════════════════════════════════════
+
+🔧 TROUBLESHOOTING WANDB
+
+ISSUE: "I don't see any metrics"
+SOLUTION:
+  • Check Wandb initialization message during training
+  • Make sure you didn't use --no-wandb flag
+  • Refresh the dashboard page
+  • Check you're looking at the right project/run
+
+ISSUE: "I see some metrics but not F1 score"
+SOLUTION:
+  • Make sure you're using the updated train_vm.py
+  • F1 score appears after first epoch completes
+  • Look for "metrics/f1_score" in the search box
+  • May need to refresh page
+
+ISSUE: "Metrics stopped updating"
+SOLUTION:
+  • Check if training is still running
+  • Refresh the page
+  • Check internet connection
+  • Training may have finished!
+
+ISSUE: "Can't find my run"
+SOLUTION:
+  • Check project name: "yolov11-wildlife-detection"
+  • Look in "Runs" tab
+  • Search by run name or date
+  • Check if you're logged into correct account
+
+═══════════════════════════════════════════════════════════════════════
+
+💡 PRO TIPS
+
+1. Compare Multiple Runs
+   • Train with different hyperparameters
+   • Select multiple runs in Wandb
+   • Compare F1 scores side-by-side
+   • Find best configuration
+
+2. Use Wandb Reports
+   • Create a report to share results
+   • Include key charts and findings
+   • Document your best model
+   • Share with team
+
+3. Set Up Alerts
+   • Configure email alerts for milestones
+   • Get notified when mAP50 > 0.7
+   • Monitor training remotely
+
+4. Log Custom Notes
+   • Add notes to runs in Wandb
+   • Document what worked/didn't work
+   • Track experiment ideas
+
+5. Use Tags
+   • Tag runs with experiment types
+   • "baseline", "with-augmentation", "fine-tuned"
+   • Easy filtering later
+
+═══════════════════════════════════════════════════════════════════════
+
+🔍 ACCESSING METRICS PROGRAMMATICALLY
+
+In Wandb Dashboard:
+  • Go to your run
+  • Click "Overview" tab
+  • Scroll down to "Summary" section
+  • Shows final values of all metrics
+
+Download Metrics CSV:
+  • Click "Charts" tab
+  • Click "..." on any chart
+  • Select "Download CSV"
+  • Get raw data for analysis
+
+Using Wandb API (optional):
+  import wandb
+  api = wandb.Api()
+  run = api.run("username/yolov11-wildlife-detection/run_id")
+  metrics = run.history()
+  print(metrics['metrics/f1_score'])
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 EXAMPLE WANDB DASHBOARD LAYOUT
+
+┌─────────────────────────────────────────────────────────────────┐
+│ mAP50 over time                                                 │
+│ ┌───────────────────────────────────────────────────────────┐   │
+│ │                                                    ╱───    │   │
+│ │                                            ╱──────╱        │   │
+│ │                                    ╱──────╱                │   │
+│ │                            ╱──────╱                        │   │
+│ │                    ╱──────╱                                │   │
+│ │            ╱──────╱                                        │   │
+│ │    ╱──────╱                                                │   │
+│ │───╱                                                        │   │
+│ └───────────────────────────────────────────────────────────┘   │
+├─────────────────────────────────────────────────────────────────┤
+│ F1 Score, Precision, Recall                                     │
+│ ┌───────────────────────────────────────────────────────────┐   │
+│ │ ── F1 Score                                                │   │
+│ │ -- Precision                                               │   │
+│ │ ·· Recall                                                  │   │
+│ └───────────────────────────────────────────────────────────┘   │
+├─────────────────────────────────────────────────────────────────┤
+│ Losses                                                          │
+│ ┌───────────────────────────────────────────────────────────┐   │
+│ │ ╲                                                          │   │
+│ │  ╲                                                         │   │
+│ │   ╲___                                                     │   │
+│ │       ╲___                                                 │   │
+│ │           ───────────                                      │   │
+│ └───────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ VERIFICATION
+
+To verify F1 score is being logged:
+
+1. Start training:
+   python train_vm.py --epochs 50
+
+2. Check training output:
+   ✓ Custom F1 score logging callback added
+
+3. Wait for first epoch to complete
+
+4. Go to Wandb dashboard
+
+5. Look for "metrics/f1_score" chart
+
+6. Should see F1 score updating every epoch!
+
+7. After training, check:
+   Validation Results:
+     mAP50: 0.7000
+     mAP50-95: 0.5000
+     Precision: 0.8000
+     Recall: 0.7500
+     F1 Score: 0.7742  ← Now shown!
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 QUICK REFERENCE
+
+MOST IMPORTANT METRICS:
+  1. mAP50 - Overall detection quality
+  2. F1 Score - Balanced precision/recall
+  3. Precision - Accuracy of detections
+  4. Recall - Coverage of all objects
+
+WHERE TO FIND THEM:
+  • During training: Wandb dashboard (live)
+  • After training: Terminal output + Wandb
+  • Comparison: Wandb workspace (multiple runs)
+
+TARGET VALUES (Wildlife Detection):
+  mAP50:    > 0.65 (good), > 0.75 (excellent)
+  F1 Score: > 0.65 (good), > 0.75 (excellent)
+  Precision: > 0.70 (good), > 0.85 (excellent)
+  Recall:   > 0.65 (good), > 0.80 (excellent)
+
+═══════════════════════════════════════════════════════════════════════
+
+📚 MORE INFORMATION
+
+For Wandb basics:
+  → See: WANDB_METRICS_GUIDE.md
+
+For quick reference:
+  → See: WANDB_QUICK_REFERENCE.txt
+
+For general training:
+  → See: COMPLETE_SETUP_GUIDE.md
+
+For Wandb documentation:
+  → https://docs.wandb.ai/
+
+═══════════════════════════════════════════════════════════════════════
+
+Status: ✅ F1 Score Logging Implemented
+Last Updated: 2025-11-20
+Version: 2.3
+
+Happy monitoring! 📊📈🎯
+
+═══════════════════════════════════════════════════════════════════════
+

@@ -1,0 +1,305 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║              Using Custom Pretrained Weights (--weights)             ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+NEW FEATURE: Load custom pretrained models for fine-tuning!
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 USE CASES
+
+1. Fine-tuning from a previous training run
+   → Continue training from your best checkpoint
+
+2. Transfer learning
+   → Start from a model trained on similar data
+
+3. Resuming interrupted training
+   → Pick up where you left off
+
+4. Experimenting with different starting points
+   → Try different base models
+
+═══════════════════════════════════════════════════════════════════════
+
+📋 USAGE
+
+Basic syntax:
+  python train_vm.py --weights PATH/TO/MODEL.pt
+
+Examples:
+
+1. Use your previous best model:
+   python train_vm.py --weights runs/yolov11_wildlife/weights/best.pt --epochs 50
+
+2. Use last checkpoint (if training was interrupted):
+   python train_vm.py --weights runs/yolov11_wildlife/weights/last.pt --epochs 50
+
+3. Use absolute path:
+   python train_vm.py --weights /full/path/to/your/model.pt --epochs 20
+
+4. Fine-tune with smaller batch for higher resolution:
+   python train_vm.py --weights runs/yolov11_wildlife/weights/best.pt --batch 2 --imgsz 2048
+
+5. Combined with other options:
+   python train_vm.py \
+     --weights runs/yolov11_wildlife/weights/best.pt \
+     --epochs 30 \
+     --batch 4 \
+     --imgsz 2048 \
+     --wandb-key YOUR_KEY
+
+═══════════════════════════════════════════════════════════════════════
+
+🔧 SUPPORTED MODEL TYPES
+
+✅ YOLOv11 checkpoints (.pt files):
+   - best.pt (best model from training)
+   - last.pt (last epoch checkpoint)
+   - epoch_N.pt (checkpoint from specific epoch)
+   - yolo11[n/s/m/l/x].pt (official pretrained models)
+
+✅ Custom trained models:
+   - Any .pt file from Ultralytics YOLO training
+
+❌ NOT supported:
+   - Other frameworks (TensorFlow, PyTorch native, etc.)
+   - Wrong architecture (YOLOv8, YOLOv5, etc. may not work)
+   - OBB models if your dataset uses regular boxes
+
+═══════════════════════════════════════════════════════════════════════
+
+📁 WHERE TO FIND CHECKPOINT FILES
+
+After training, your checkpoints are saved in:
+
+runs/yolov11_wildlife/weights/
+├── best.pt      ← Best model (highest mAP) ⭐ USE THIS
+├── last.pt      ← Last epoch
+├── epoch_5.pt   ← Checkpoint at epoch 5
+├── epoch_10.pt  ← Checkpoint at epoch 10
+└── ...
+
+Default location:
+  /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm/runs/yolov11_wildlife/weights/
+
+═══════════════════════════════════════════════════════════════════════
+
+⚡ QUICK START
+
+# Scenario 1: Continue from your best model
+cd /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm
+conda activate yolov11-wildlife
+
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 30 \
+  --batch 4
+
+# Scenario 2: Training was interrupted, resume from last checkpoint
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/last.pt \
+  --epochs 50
+
+# Scenario 3: Try different image size with your best model
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --imgsz 1024 \
+  --batch 8 \
+  --epochs 20
+
+═══════════════════════════════════════════════════════════════════════
+
+🎓 BEST PRACTICES
+
+1. Always use best.pt for fine-tuning
+   → It has the best validation performance
+
+2. Use fewer epochs when fine-tuning
+   → Model is already trained, 20-50 epochs often enough
+   → Starting from scratch typically needs 50-100 epochs
+
+3. Consider reducing learning rate (advanced)
+   → Fine-tuning benefits from lower learning rate
+   → YOLO's auto optimizer handles this, but you can adjust
+
+4. Monitor metrics closely
+   → Fine-tuning should show immediate improvements
+   → If metrics don't improve, check data/configuration
+
+5. Experiment with different hyperparameters
+   → Try different batch sizes
+   → Try different image sizes
+   → Adjust augmentation settings
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 EXPECTED BEHAVIOR
+
+When using custom weights, you'll see:
+
+✓ Using custom pretrained weights: runs/yolov11_wildlife/weights/best.pt
+
+Loading model: /path/to/runs/yolov11_wildlife/weights/best.pt
+  → Fine-tuning from custom checkpoint
+
+Configuration:
+  Model: /path/to/runs/yolov11_wildlife/weights/best.pt
+  Training mode: Fine-tuning from custom weights
+  Classes: ['Buffalo', 'Elephant', 'Kudu', 'Topi', 'Warthog', 'Waterbuck']
+
+Training should start immediately with loaded weights.
+
+═══════════════════════════════════════════════════════════════════════
+
+❌ TROUBLESHOOTING
+
+ERROR: "Weights file not found"
+CAUSE: Path is incorrect or file doesn't exist
+FIX: 
+  - Check the path: ls runs/yolov11_wildlife/weights/
+  - Use absolute path if relative path fails
+  - Ensure you've completed at least one training run
+
+ERROR: "Model architecture mismatch"
+CAUSE: Trying to load incompatible model
+FIX:
+  - Ensure model was trained with same YOLO version
+  - Check that model has same number of classes (6)
+  - Use models trained with Ultralytics YOLO only
+
+ERROR: "CUDA out of memory" (when fine-tuning)
+CAUSE: Model + data too large for GPU
+FIX:
+  - Reduce batch size: --batch 2 or --batch 1
+  - Reduce image size: --imgsz 1024
+  - Clear GPU cache: nvidia-smi --gpu-reset
+
+═══════════════════════════════════════════════════════════════════════
+
+🔄 COMPARISON: Base Model vs Custom Weights
+
+┌────────────────────────────────────────────────────────────────────┐
+│ Starting from Base Model (default)                                │
+├────────────────────────────────────────────────────────────────────┤
+│ python train_vm.py --epochs 50                                     │
+│                                                                    │
+│ • Starts from yolo11s.pt (pretrained on COCO)                     │
+│ • Learns wildlife detection from scratch                          │
+│ • Takes longer to converge (50-100 epochs)                        │
+│ • Good for initial training                                       │
+└────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────┐
+│ Starting from Custom Weights (fine-tuning)                        │
+├────────────────────────────────────────────────────────────────────┤
+│ python train_vm.py --weights runs/.../best.pt --epochs 30         │
+│                                                                    │
+│ • Starts from your trained model                                  │
+│ • Already knows wildlife detection                                │
+│ • Converges faster (20-50 epochs)                                 │
+│ • Good for improvements and experimentation                       │
+└────────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════
+
+💡 PRO TIPS
+
+1. Save multiple checkpoints
+   → Use --save_period to save every N epochs
+   → Gives you multiple starting points to try
+
+2. Experiment with different runs
+   → Run 1: Train from base model (50 epochs)
+   → Run 2: Fine-tune best.pt with different augmentation
+   → Run 3: Fine-tune best.pt with different image size
+
+3. Use Wandb to compare
+   → Track all runs in Wandb
+   → Compare base model vs fine-tuned performance
+   → Identify best configuration
+
+4. Keep backups
+   → Copy best.pt to safe location
+   → Rename with descriptive names:
+     best_50epochs_2048px.pt
+     best_finetuned_30epochs_1024px.pt
+
+═══════════════════════════════════════════════════════════════════════
+
+📝 EXAMPLE WORKFLOW
+
+Day 1: Initial Training
+  python train_vm.py --epochs 50 --batch 4 --imgsz 2048
+  → Result: runs/yolov11_wildlife/weights/best.pt (mAP: 0.65)
+
+Day 2: Fine-tune with more epochs
+  python train_vm.py \
+    --weights runs/yolov11_wildlife/weights/best.pt \
+    --epochs 30 --batch 4 --imgsz 2048
+  → Result: runs/yolov11_wildlife2/weights/best.pt (mAP: 0.70) ✅
+
+Day 3: Try smaller image size for faster inference
+  python train_vm.py \
+    --weights runs/yolov11_wildlife2/weights/best.pt \
+    --epochs 20 --batch 8 --imgsz 1024
+  → Result: runs/yolov11_wildlife3/weights/best.pt (mAP: 0.68)
+  → Keep yolov11_wildlife2 (best accuracy)
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 COMPLETE COMMAND REFERENCE
+
+python train_vm.py [OPTIONS]
+
+Options:
+  --weights PATH       Path to pretrained .pt file
+  --epochs N           Number of epochs (default: 50)
+  --batch N            Batch size (default: 4)
+  --imgsz N            Image size (default: 2048)
+  --no-wandb           Disable wandb logging
+  --wandb-key KEY      Wandb API key
+
+Examples:
+  # Basic fine-tuning
+  python train_vm.py --weights runs/.../best.pt
+
+  # Full configuration
+  python train_vm.py --weights runs/.../best.pt --epochs 30 --batch 4 --imgsz 2048
+
+  # Quick test (5 epochs)
+  python train_vm.py --weights runs/.../best.pt --epochs 5 --no-wandb
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ VERIFICATION
+
+To verify custom weights are loaded:
+
+1. Check output shows:
+   ✓ Using custom pretrained weights: [path]
+   Loading model: [path]
+     → Fine-tuning from custom checkpoint
+
+2. Training starts with reasonable initial metrics
+   (not random, should be close to loaded model's performance)
+
+3. Loss values start lower than training from scratch
+
+4. mAP values in first epoch are reasonable (not 0)
+
+═══════════════════════════════════════════════════════════════════════
+
+Status: ✅ Feature Added
+Last Updated: 2025-11-20
+Version: 2.1
+
+═══════════════════════════════════════════════════════════════════════
+
+Need more help?
+  - See: COMPLETE_SETUP_GUIDE.md for full training guide
+  - See: QUICK_START.txt for basic commands
+  - See: README.md for documentation index
+
+═══════════════════════════════════════════════════════════════════════
+

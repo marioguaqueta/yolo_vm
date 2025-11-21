@@ -1,0 +1,287 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║          ✨ NEW FEATURE: Custom Pretrained Weights Support           ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+DATE: 2025-11-20
+VERSION: 2.1
+STATUS: ✅ Ready to Use
+
+═══════════════════════════════════════════════════════════════════════
+
+🎉 WHAT'S NEW?
+
+You can now load custom pretrained models using the --weights option!
+
+This allows you to:
+  ✅ Fine-tune from previous training runs
+  ✅ Resume interrupted training
+  ✅ Transfer learn from similar models
+  ✅ Experiment with different configurations
+
+═══════════════════════════════════════════════════════════════════════
+
+🚀 HOW TO USE
+
+Basic syntax:
+  python train_vm.py --weights PATH/TO/MODEL.pt
+
+Example:
+  python train_vm.py --weights runs/yolov11_wildlife/weights/best.pt --epochs 30
+
+═══════════════════════════════════════════════════════════════════════
+
+📋 QUICK EXAMPLES
+
+1. Fine-tune from your best model:
+   python train_vm.py --weights runs/yolov11_wildlife/weights/best.pt --epochs 30
+
+2. Resume from last checkpoint:
+   python train_vm.py --weights runs/yolov11_wildlife/weights/last.pt --epochs 50
+
+3. Try different image size:
+   python train_vm.py --weights runs/.../best.pt --imgsz 1024 --batch 8 --epochs 20
+
+4. Full configuration:
+   python train_vm.py \
+     --weights runs/yolov11_wildlife/weights/best.pt \
+     --epochs 30 \
+     --batch 4 \
+     --imgsz 2048 \
+     --wandb-key YOUR_KEY
+
+═══════════════════════════════════════════════════════════════════════
+
+🔧 IMPLEMENTATION DETAILS
+
+New command-line argument:
+  --weights PATH    Path to pretrained model weights (.pt file)
+
+Validation:
+  • Checks if file exists before training
+  • Shows clear error message if not found
+  • Displays which weights are being used
+
+Output:
+  ✓ Using custom pretrained weights: [path]
+  Loading model: [path]
+    → Fine-tuning from custom checkpoint
+  Training mode: Fine-tuning from custom weights
+
+═══════════════════════════════════════════════════════════════════════
+
+📁 WHERE TO FIND CHECKPOINTS
+
+After your first training run, checkpoints are saved in:
+
+runs/yolov11_wildlife/weights/
+├── best.pt      ← Use this! (highest validation mAP)
+├── last.pt      ← Last epoch (for resuming)
+├── epoch_5.pt   ← Checkpoint at epoch 5
+├── epoch_10.pt  ← Checkpoint at epoch 10
+└── ...
+
+Full path (on VM):
+  /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm/runs/yolov11_wildlife/weights/
+
+═══════════════════════════════════════════════════════════════════════
+
+💡 WHY USE CUSTOM WEIGHTS?
+
+SCENARIO 1: Your model is good, but could be better
+  → Fine-tune from best.pt with more epochs or different settings
+
+SCENARIO 2: Training was interrupted
+  → Resume from last.pt to continue where you left off
+
+SCENARIO 3: Want to try different hyperparameters
+  → Start from best.pt and experiment with batch size, image size, etc.
+
+SCENARIO 4: Compare different approaches
+  → Train multiple versions starting from same checkpoint
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 BENEFITS
+
+🚀 Faster convergence
+   • Model already learned wildlife detection
+   • Fewer epochs needed (20-50 vs 50-100)
+   • Saves time and GPU costs
+
+📈 Better results
+   • Build on previous training
+   • Incremental improvements
+   • Higher final mAP
+
+🔬 Experimentation
+   • Try different configurations
+   • A/B test hyperparameters
+   • Find optimal settings
+
+💾 Resume capability
+   • Don't lose progress from interruptions
+   • Continue from last checkpoint
+   • No wasted training time
+
+═══════════════════════════════════════════════════════════════════════
+
+📚 DOCUMENTATION
+
+Created files:
+  ✅ CUSTOM_WEIGHTS_GUIDE.txt  - Comprehensive guide
+  ✅ QUICK_WEIGHTS_REF.txt     - Quick reference
+  ✅ NEW_FEATURE_WEIGHTS.txt   - This file
+
+Updated files:
+  ✅ train_vm.py               - Added --weights support
+  ✅ README.md                 - Added feature documentation
+  ✅ QUICK_START.txt           - Added usage examples
+
+═══════════════════════════════════════════════════════════════════════
+
+🎓 TYPICAL WORKFLOW
+
+Week 1: Initial Training
+  python train_vm.py --epochs 50 --batch 4
+  → Result: best.pt with mAP: 0.65
+
+Week 2: Fine-tune with more epochs
+  python train_vm.py --weights runs/.../best.pt --epochs 30
+  → Result: best.pt with mAP: 0.70 ✅ Improved!
+
+Week 3: Optimize for speed (smaller images)
+  python train_vm.py --weights runs/.../best.pt --imgsz 1024 --batch 8 --epochs 20
+  → Result: best.pt with mAP: 0.68 (slightly lower but faster inference)
+
+Week 4: Final polish
+  python train_vm.py --weights runs/.../best.pt --epochs 20
+  → Result: best.pt with mAP: 0.72 ✅ Production ready!
+
+═══════════════════════════════════════════════════════════════════════
+
+⚡ GETTING STARTED
+
+1. Complete your first training run:
+   python train_vm.py --epochs 50
+
+2. Wait for training to finish
+   → Check: runs/yolov11_wildlife/weights/best.pt exists
+
+3. Fine-tune from your best model:
+   python train_vm.py --weights runs/yolov11_wildlife/weights/best.pt --epochs 30
+
+4. Compare results in Wandb!
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ VERIFICATION
+
+To verify the feature is working:
+
+1. Check command help:
+   python train_vm.py --help
+   
+   Should show:
+   --weights PATH  Path to pretrained model weights (e.g., best.pt ...)
+
+2. Run with custom weights:
+   python train_vm.py --weights runs/.../best.pt --epochs 1
+   
+   Should show:
+   ✓ Using custom pretrained weights: ...
+   Loading model: ...
+     → Fine-tuning from custom checkpoint
+
+3. Training starts successfully ✅
+
+═══════════════════════════════════════════════════════════════════════
+
+❌ TROUBLESHOOTING
+
+ERROR: "Weights file not found at ..."
+CAUSE: Path is incorrect or file doesn't exist
+FIX:
+  - Check: ls runs/yolov11_wildlife/weights/
+  - Ensure you completed at least one training run
+  - Use absolute path if relative path fails
+
+ERROR: "Model architecture mismatch"
+CAUSE: Incompatible model (wrong YOLO version or different classes)
+FIX:
+  - Use models trained with same YOLO version
+  - Ensure model has 6 classes (Buffalo, Elephant, etc.)
+  - Only use Ultralytics YOLO models
+
+ERROR: "CUDA out of memory"
+CAUSE: Model + larger batch size exceeds GPU memory
+FIX:
+  - Reduce batch: --batch 2
+  - Reduce image size: --imgsz 1024
+  - Clear GPU cache before training
+
+═══════════════════════════════════════════════════════════════════════
+
+🔗 RELATED COMMANDS
+
+All training options:
+  --weights PATH   Custom pretrained model
+  --epochs N       Number of epochs
+  --batch N        Batch size
+  --imgsz N        Image size
+  --no-wandb       Disable wandb
+  --wandb-key KEY  Wandb API key
+
+Examples:
+  # Basic fine-tuning
+  python train_vm.py --weights runs/.../best.pt
+
+  # Full configuration
+  python train_vm.py --weights runs/.../best.pt --epochs 30 --batch 4 --imgsz 2048
+
+  # Without wandb
+  python train_vm.py --weights runs/.../best.pt --no-wandb --epochs 20
+
+═══════════════════════════════════════════════════════════════════════
+
+📖 MORE INFORMATION
+
+For detailed usage:
+  → Read: CUSTOM_WEIGHTS_GUIDE.txt
+
+For quick reference:
+  → Read: QUICK_WEIGHTS_REF.txt
+
+For general training:
+  → Read: COMPLETE_SETUP_GUIDE.md
+
+For all documentation:
+  → Read: README.md
+
+═══════════════════════════════════════════════════════════════════════
+
+✨ FEATURE SUMMARY
+
+• Added: --weights command-line option
+• Supports: Any .pt model file
+• Use cases: Fine-tuning, resuming, transfer learning
+• Benefits: Faster training, better results, experimentation
+• Documentation: Comprehensive guides created
+• Status: ✅ Ready to use immediately
+
+═══════════════════════════════════════════════════════════════════════
+
+🎉 ENJOY THE NEW FEATURE!
+
+This enhancement makes your training workflow much more flexible
+and powerful. You can now iterate faster and achieve better results!
+
+Happy fine-tuning! 🚀🦁🐘
+
+═══════════════════════════════════════════════════════════════════════
+
+Last Updated: 2025-11-20
+Version: 2.1
+Status: Production Ready ✅
+
+═══════════════════════════════════════════════════════════════════════
+

@@ -51,6 +51,12 @@ python train_vm.py --wandb-key YOUR_KEY --epochs 50
 nohup python train_vm.py --epochs 50 > training.log 2>&1 &
 tail -f training.log  # View logs
 
+# Fine-tune from previous training
+python train_vm.py --weights runs/yolov11_wildlife/weights/best.pt --epochs 30
+
+# With data augmentation (rotation + zoom) (NEW!)
+python train_vm.py --rotate 15.0 --scale 0.8 --epochs 50
+
 ═══════════════════════════════════════════════════════════════════════
 
 🔥 QUICK FIXES FOR COMMON ERRORS
@@ -103,11 +109,19 @@ Before training:
 
 🎯 TRAINING OPTIONS
 
+Basic:
 --epochs N      Number of training epochs (default: 50)
 --batch N       Batch size (default: 4)
 --imgsz N       Image size in pixels (default: 2048)
+--weights PATH  Path to custom pretrained model (e.g., best.pt)
 --no-wandb      Disable wandb logging
 --wandb-key K   Wandb API key
+
+Augmentation:
+--rotate DEG    Rotation (e.g., 15.0 for ±15°)
+--scale RATIO   Zoom (0.0-1.0, default: 0.5)
+--translate R   Translation (0.0-1.0)
+--fliplr PROB   Horizontal flip (0.0-1.0)
 
 ═══════════════════════════════════════════════════════════════════════
 

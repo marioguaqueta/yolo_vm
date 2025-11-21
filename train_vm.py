@@ -78,6 +78,17 @@ class Config:
     CACHE = False  # Don't cache images in RAM
     RECT = False  # Don't use rectangular training (saves memory)
     
+    # Data augmentation parameters
+    DEGREES = 0.0      # Rotation (0.0 = disabled, try 10.0 for ±10°)
+    SCALE = 0.5        # Scale/zoom (0.0-1.0, 0.5 = up to 50% zoom)
+    TRANSLATE = 0.1    # Translation (0.0-1.0)
+    HSV_H = 0.015      # Hue augmentation (0.0-1.0)
+    HSV_S = 0.7        # Saturation augmentation (0.0-1.0)
+    HSV_V = 0.4        # Value/brightness augmentation (0.0-1.0)
+    FLIPLR = 0.5       # Horizontal flip probability (0.0-1.0)
+    FLIPUD = 0.0       # Vertical flip (0.0 for aerial images)
+    MOSAIC = 1.0       # Mosaic augmentation (0.0-1.0)
+    
     # Device configuration
     if torch.cuda.is_available():
         DEVICE = 0
@@ -220,6 +231,27 @@ def initialize_wandb(config, enabled=True):
 # TRAINING
 # ============================================================================
 
+def on_fit_epoch_end(trainer):
+    """Callback to log custom metrics (F1 score) after each epoch"""
+    if wandb.run is not None:
+        # Get metrics from trainer
+        metrics = trainer.metrics
+        
+        # Calculate F1 score from precision and recall
+        if 'metrics/precision(B)' in metrics and 'metrics/recall(B)' in metrics:
+            precision = metrics['metrics/precision(B)']
+            recall = metrics['metrics/recall(B)']
+            
+            if (precision + recall) > 0:
+                f1_score = 2 * (precision * recall) / (precision + recall)
+                
+                # Log F1 score to Wandb
+                wandb.log({
+                    'metrics/f1_score': f1_score,
+                    'epoch': trainer.epoch
+                })
+
+
 def train_model(config, yaml_path, use_wandb=True):
     """Train YOLOv11 model"""
     print("\n" + "="*70)
@@ -233,7 +265,14 @@ def train_model(config, yaml_path, use_wandb=True):
     
     # Initialize model
     print(f"\nLoading model: {config.MODEL}")
+    if str(config.MODEL).endswith('best.pt') or str(config.MODEL).endswith('last.pt'):
+        print(f"  → Fine-tuning from custom checkpoint")
     model = YOLO(config.MODEL)
+    
+    # Add custom callback for F1 score logging
+    if use_wandb:
+        model.add_callback("on_fit_epoch_end", on_fit_epoch_end)
+        print("✓ Custom F1 score logging callback added")
     
     # Training parameters
     train_args = {
@@ -259,18 +298,18 @@ def train_model(config, yaml_path, use_wandb=True):
         'cache': config.CACHE,  # Memory optimization
         'rect': config.RECT,  # Memory optimization
         
-        # Data augmentation
-        'hsv_h': 0.015,
-        'hsv_s': 0.7,
-        'hsv_v': 0.4,
-        'degrees': 0.0,
-        'translate': 0.1,
-        'scale': 0.5,
+        # Data augmentation (from config, customizable via CLI)
+        'hsv_h': config.HSV_H,
+        'hsv_s': config.HSV_S,
+        'hsv_v': config.HSV_V,
+        'degrees': config.DEGREES,
+        'translate': config.TRANSLATE,
+        'scale': config.SCALE,
         'shear': 0.0,
         'perspective': 0.0,
-        'flipud': 0.0,
-        'fliplr': 0.5,
-        'mosaic': 1.0,
+        'flipud': config.FLIPUD,
+        'fliplr': config.FLIPLR,
+        'mosaic': config.MOSAIC,
         'mixup': 0.0,
         'copy_paste': 0.0,
     }
@@ -285,6 +324,14 @@ def train_model(config, yaml_path, use_wandb=True):
     print(f"  Mixed Precision: Enabled")
     print(f"  Memory optimization: Cache={config.CACHE}, Rect={config.RECT}")
     print(f"  Wandb: {'Enabled' if use_wandb else 'Disabled'}")
+    
+    print(f"\nData Augmentation:")
+    print(f"  Rotation: ±{config.DEGREES}° {'(disabled)' if config.DEGREES == 0 else ''}")
+    print(f"  Scale/Zoom: {config.SCALE * 100:.0f}%")
+    print(f"  Translation: {config.TRANSLATE * 100:.0f}%")
+    print(f"  HSV (H/S/V): {config.HSV_H:.3f} / {config.HSV_S:.3f} / {config.HSV_V:.3f}")
+    print(f"  Horizontal Flip: {config.FLIPLR * 100:.0f}%")
+    print(f"  Mosaic: {config.MOSAIC * 100:.0f}%")
     
     # Memory warning
     if config.IMG_SIZE >= 2048 and config.BATCH_SIZE > 4:
@@ -307,7 +354,7 @@ def train_model(config, yaml_path, use_wandb=True):
     return model, results
 
 
-def validate_model(model, yaml_path, config):
+def validate_model(model, yaml_path, config, log_to_wandb=False):
     """Validate the trained model"""
     print("\n" + "="*70)
     print("VALIDATING MODEL")
@@ -323,18 +370,43 @@ def validate_model(model, yaml_path, config):
         plots=True
     )
     
+    # Calculate F1 score
+    precision = results.box.mp
+    recall = results.box.mr
+    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    
     print(f"\nValidation Results:")
     print(f"  mAP50: {results.box.map50:.4f}")
     print(f"  mAP50-95: {results.box.map:.4f}")
-    print(f"  Precision: {results.box.mp:.4f}")
-    print(f"  Recall: {results.box.mr:.4f}")
+    print(f"  Precision: {precision:.4f}")
+    print(f"  Recall: {recall:.4f}")
+    print(f"  F1 Score: {f1_score:.4f}")  # Now displayed!
+    
+    # Log custom metrics to Wandb
+    if log_to_wandb and wandb.run is not None:
+        wandb.log({
+            'test/mAP50': results.box.map50,
+            'test/mAP50-95': results.box.map,
+            'test/precision': precision,
+            'test/recall': recall,
+            'test/f1_score': f1_score,  # Custom F1 score!
+        })
+        print(f"\n✓ Test metrics logged to Wandb")
     
     if hasattr(results.box, 'ap_class_index'):
         print(f"\nPer-class mAP50:")
+        per_class_metrics = {}
         for idx, class_idx in enumerate(results.box.ap_class_index):
             class_name = config.CLASS_NAMES[int(class_idx)]
             map50 = results.box.ap50[idx]
             print(f"  {class_name:12s}: {map50:.4f}")
+            
+            # Log per-class metrics to Wandb
+            if log_to_wandb and wandb.run is not None:
+                per_class_metrics[f'test/{class_name}_mAP50'] = map50
+        
+        if per_class_metrics and wandb.run is not None:
+            wandb.log(per_class_metrics)
     
     return results
 
@@ -350,7 +422,27 @@ def main():
     parser.add_argument('--epochs', type=int, default=None, help='Number of epochs')
     parser.add_argument('--batch', type=int, default=None, help='Batch size')
     parser.add_argument('--imgsz', type=int, default=None, help='Image size')
+    parser.add_argument('--weights', type=str, default=None, 
+                        help='Path to pretrained model weights (e.g., best.pt from previous training)')
     parser.add_argument('--wandb-key', type=str, default=None, help='Wandb API key')
+    
+    # Data augmentation options
+    parser.add_argument('--rotate', type=float, default=None, 
+                        help='Image rotation augmentation in degrees (e.g., 10.0 for ±10°)')
+    parser.add_argument('--scale', type=float, default=None, 
+                        help='Image scale/zoom augmentation (0.0-1.0, default: 0.5)')
+    parser.add_argument('--hsv-h', type=float, default=None, 
+                        help='HSV Hue augmentation (0.0-1.0, default: 0.015)')
+    parser.add_argument('--hsv-s', type=float, default=None, 
+                        help='HSV Saturation augmentation (0.0-1.0, default: 0.7)')
+    parser.add_argument('--hsv-v', type=float, default=None, 
+                        help='HSV Value augmentation (0.0-1.0, default: 0.4)')
+    parser.add_argument('--translate', type=float, default=None, 
+                        help='Translation augmentation (0.0-1.0, default: 0.1)')
+    parser.add_argument('--fliplr', type=float, default=None, 
+                        help='Horizontal flip probability (0.0-1.0, default: 0.5)')
+    parser.add_argument('--mosaic', type=float, default=None, 
+                        help='Mosaic augmentation probability (0.0-1.0, default: 1.0)')
     
     args = parser.parse_args()
     
@@ -369,6 +461,36 @@ def main():
     if args.imgsz:
         config.IMG_SIZE = args.imgsz
     
+    # Override augmentation parameters
+    if args.rotate is not None:
+        config.DEGREES = args.rotate
+    if args.scale is not None:
+        config.SCALE = args.scale
+    if args.hsv_h is not None:
+        config.HSV_H = args.hsv_h
+    if args.hsv_s is not None:
+        config.HSV_S = args.hsv_s
+    if args.hsv_v is not None:
+        config.HSV_V = args.hsv_v
+    if args.translate is not None:
+        config.TRANSLATE = args.translate
+    if args.fliplr is not None:
+        config.FLIPLR = args.fliplr
+    if args.mosaic is not None:
+        config.MOSAIC = args.mosaic
+    
+    # Handle custom weights path
+    if args.weights:
+        weights_path = Path(args.weights)
+        if not weights_path.exists():
+            print(f"\n❌ ERROR: Weights file not found at {weights_path}")
+            print(f"   Please provide a valid path to a .pt file")
+            print(f"\n   Example:")
+            print(f"   python train_vm.py --weights runs/yolov11_wildlife/weights/best.pt")
+            return 1
+        config.MODEL = str(weights_path.absolute())
+        print(f"\n✓ Using custom pretrained weights: {weights_path}")
+    
     # Print system info
     print_system_info()
     
@@ -380,6 +502,10 @@ def main():
     print(f"  Code directory: {config.BASE_DIR}")
     print(f"  Dataset directory: {config.DATASET_ROOT}")
     print(f"  Model: {config.MODEL}")
+    if args.weights:
+        print(f"  Training mode: Fine-tuning from custom weights")
+    else:
+        print(f"  Training mode: Starting from base model")
     print(f"  Classes: {list(config.CLASS_NAMES.values())}")
     
     # Verify dataset exists
@@ -433,7 +559,7 @@ def main():
         model, train_results = train_model(config, yaml_path, use_wandb=(wandb_run is not None))
         
         # Validate model
-        val_results = validate_model(model, yaml_path, config)
+        val_results = validate_model(model, yaml_path, config, log_to_wandb=(wandb_run is not None))
         
         # Print final information
         best_model_path = config.BASE_DIR / 'runs' / 'yolov11_wildlife' / 'weights' / 'best.pt'

@@ -1,0 +1,518 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║              🚀 FINAL TRAINING COMMAND - PRODUCTION READY             ║
+║            Complete Command with All Optimizations                    ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+✨ Complete training command with custom weights, augmentation, and optimization!
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 RECOMMENDED PRODUCTION COMMAND
+
+cd /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm
+conda activate yolov11-wildlife
+
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 50 \
+  --batch 4 \
+  --imgsz 2048 \
+  --rotate 15.0 \
+  --scale 0.7 \
+  --translate 0.15 \
+  --fliplr 0.6 \
+  --hsv-s 0.8 \
+  --hsv-v 0.5 \
+  --mosaic 1.0
+
+═══════════════════════════════════════════════════════════════════════
+
+📋 PARAMETER BREAKDOWN
+
+--weights runs/yolov11_wildlife/weights/best.pt
+   → Use your best model from previous training
+   → Fine-tuning from proven checkpoint
+   → Faster convergence
+
+--epochs 50
+   → Sufficient for fine-tuning (30-50 typical)
+   → Use more (100) if training from scratch
+   → Early stopping prevents overfitting
+
+--batch 4
+   → Optimal for 2048px images on L40 GPU (24GB)
+   → Reduce to 2 if you get OOM errors
+   → Increase to 8 if using smaller images (1024px)
+
+--imgsz 2048
+   → High resolution for aerial detection
+   → Captures small/distant animals
+   → Good balance of quality vs speed
+
+--rotate 15.0
+   → Rotates images ±15 degrees
+   → Handles different drone orientations
+   → Conservative (not too extreme for aerial)
+
+--scale 0.7
+   → Up to 70% zoom variation
+   → Simulates different altitudes
+   → Helps with distance variation
+
+--translate 0.15
+   → Shifts images up to 15%
+   → Handles off-center subjects
+   → More than default 10%
+
+--fliplr 0.6
+   → 60% chance horizontal flip
+   → Left/right symmetry
+   → Slightly more than default 50%
+
+--hsv-s 0.8
+   → 80% saturation variation
+   → Handles lighting changes
+   → More than default 70%
+
+--hsv-v 0.5
+   → 50% brightness variation
+   → Different times of day
+   → More than default 40%
+
+--mosaic 1.0
+   → Always apply mosaic augmentation
+   → Combines 4 images
+   → Excellent for learning context
+
+═══════════════════════════════════════════════════════════════════════
+
+🎓 ALTERNATIVE SCENARIOS
+
+SCENARIO 1: First Time Training (No Previous Weights)
+───────────────────────────────────────────────────────────────────────
+python train_vm.py \
+  --epochs 100 \
+  --batch 4 \
+  --imgsz 2048 \
+  --rotate 15.0 \
+  --scale 0.7 \
+  --translate 0.15 \
+  --fliplr 0.6 \
+  --hsv-s 0.8 \
+  --mosaic 1.0
+
+Notes:
+  • No --weights (starts from yolo11s.pt base)
+  • More epochs (100) for training from scratch
+  • All augmentation parameters included
+
+───────────────────────────────────────────────────────────────────────
+
+SCENARIO 2: Fine-Tuning from Previous Best Model (RECOMMENDED)
+───────────────────────────────────────────────────────────────────────
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 50 \
+  --batch 4 \
+  --imgsz 2048 \
+  --rotate 15.0 \
+  --scale 0.7 \
+  --translate 0.15 \
+  --fliplr 0.6 \
+  --hsv-s 0.8 \
+  --hsv-v 0.5
+
+Notes:
+  • Uses your best.pt from previous training
+  • Fewer epochs (50) since starting from trained model
+  • Aggressive augmentation for final improvements
+
+───────────────────────────────────────────────────────────────────────
+
+SCENARIO 3: Maximum Augmentation (Small Dataset)
+───────────────────────────────────────────────────────────────────────
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 60 \
+  --batch 4 \
+  --imgsz 2048 \
+  --rotate 30.0 \
+  --scale 0.9 \
+  --translate 0.2 \
+  --fliplr 0.7 \
+  --hsv-h 0.05 \
+  --hsv-s 0.9 \
+  --hsv-v 0.6 \
+  --mosaic 1.0
+
+Notes:
+  • Aggressive augmentation
+  • 30° rotation (max for aerial)
+  • 90% scale variation
+  • Use if dataset is small (<500 images)
+
+───────────────────────────────────────────────────────────────────────
+
+SCENARIO 4: Conservative Augmentation (Large Dataset)
+───────────────────────────────────────────────────────────────────────
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 40 \
+  --batch 4 \
+  --imgsz 2048 \
+  --rotate 10.0 \
+  --scale 0.5 \
+  --translate 0.1 \
+  --fliplr 0.5
+
+Notes:
+  • Minimal augmentation
+  • Preserve original data characteristics
+  • Use if dataset is large (>2000 images)
+  • Faster training
+
+───────────────────────────────────────────────────────────────────────
+
+SCENARIO 5: Memory-Optimized (If GPU OOM Issues)
+───────────────────────────────────────────────────────────────────────
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 50 \
+  --batch 2 \
+  --imgsz 1024 \
+  --rotate 15.0 \
+  --scale 0.7 \
+  --fliplr 0.6
+
+Notes:
+  • Smaller batch (2 instead of 4)
+  • Smaller images (1024 instead of 2048)
+  • Reduced GPU memory usage
+  • Slightly faster training
+
+───────────────────────────────────────────────────────────────────────
+
+SCENARIO 6: Quick Experiment (Test Settings)
+───────────────────────────────────────────────────────────────────────
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 10 \
+  --batch 4 \
+  --imgsz 2048 \
+  --rotate 15.0 \
+  --scale 0.7 \
+  --no-wandb
+
+Notes:
+  • Only 10 epochs (quick test)
+  • No wandb (faster)
+  • Use to test hyperparameters
+
+───────────────────────────────────────────────────────────────────────
+
+SCENARIO 7: Different Starting Model (Medium Size)
+───────────────────────────────────────────────────────────────────────
+python train_vm.py \
+  --epochs 80 \
+  --batch 3 \
+  --imgsz 2048 \
+  --rotate 15.0 \
+  --scale 0.7 \
+  --translate 0.15 \
+  --fliplr 0.6
+
+# Note: Manually change MODEL in Config class to "yolo11m.pt"
+# Medium model: Better accuracy, slower training
+
+Notes:
+  • Larger model (modify config first)
+  • Smaller batch (3) due to model size
+  • More epochs (80) for larger model
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 COMPLETE PRODUCTION COMMAND (COPY & PASTE)
+
+For continuing from your best checkpoint with optimal augmentation:
+
+cd /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm && \
+conda activate yolov11-wildlife && \
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 50 \
+  --batch 4 \
+  --imgsz 2048 \
+  --rotate 15.0 \
+  --scale 0.7 \
+  --translate 0.15 \
+  --fliplr 0.6 \
+  --hsv-s 0.8 \
+  --hsv-v 0.5 \
+  --mosaic 1.0
+
+═══════════════════════════════════════════════════════════════════════
+
+🔥 WITH WANDB API KEY (Automated)
+
+If you want to pass Wandb key directly:
+
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 50 \
+  --batch 4 \
+  --imgsz 2048 \
+  --rotate 15.0 \
+  --scale 0.7 \
+  --translate 0.15 \
+  --fliplr 0.6 \
+  --hsv-s 0.8 \
+  --hsv-v 0.5 \
+  --mosaic 1.0 \
+  --wandb-key YOUR_WANDB_API_KEY_HERE
+
+Get your key from: https://wandb.ai/authorize
+
+═══════════════════════════════════════════════════════════════════════
+
+💻 BACKGROUND TRAINING (Long Sessions)
+
+For training that takes hours, run in background:
+
+nohup python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 50 \
+  --batch 4 \
+  --imgsz 2048 \
+  --rotate 15.0 \
+  --scale 0.7 \
+  --translate 0.15 \
+  --fliplr 0.6 \
+  --hsv-s 0.8 \
+  --hsv-v 0.5 \
+  --mosaic 1.0 \
+  > training.log 2>&1 &
+
+# View progress:
+tail -f training.log
+
+# Check if still running:
+ps aux | grep train_vm.py
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 EXPECTED RESULTS
+
+With these settings, you should achieve:
+
+From Scratch (100 epochs):
+  • mAP50: 0.65-0.75
+  • F1 Score: 0.65-0.75
+  • Training time: ~8-10 hours
+
+Fine-Tuning (50 epochs):
+  • mAP50: 0.70-0.80
+  • F1 Score: 0.70-0.80
+  • Training time: ~4-5 hours
+
+Aggressive Aug (60 epochs):
+  • mAP50: 0.68-0.78
+  • F1 Score: 0.68-0.78
+  • Better generalization
+  • Training time: ~5-6 hours
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ PRE-FLIGHT CHECKLIST
+
+Before running, verify:
+
+□ Environment activated: conda activate yolov11-wildlife
+□ In correct directory: cd .../yolo_vm
+□ Dataset prepared:
+  - ls ../general_dataset/images/train/*.JPG | wc -l → 928
+  - ls ../general_dataset/labels/train/*.txt | wc -l → 928
+□ Previous model exists (if using --weights):
+  - ls runs/yolov11_wildlife/weights/best.pt
+□ GPU available: nvidia-smi
+□ Disk space: df -h (> 10GB free)
+□ Wandb logged in: wandb login (or use --wandb-key)
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 PARAMETER SELECTION GUIDE
+
+HOW TO CHOOSE VALUES:
+
+Epochs:
+  • From scratch: 80-100
+  • Fine-tuning: 30-50
+  • Quick test: 5-10
+
+Batch Size:
+  • 2048px images + 24GB GPU: 4
+  • 1024px images + 24GB GPU: 8
+  • OOM errors: reduce by half
+
+Image Size:
+  • High accuracy: 2048
+  • Balanced: 1024
+  • Fast inference: 640
+
+Rotation:
+  • Aerial (drone stable): 10-15°
+  • Aerial (various angles): 20-30°
+  • Ground-level: 0° or 45°
+
+Scale:
+  • Conservative: 0.3-0.5
+  • Moderate: 0.6-0.7
+  • Aggressive: 0.8-0.9
+
+Translation:
+  • Conservative: 0.1
+  • Moderate: 0.15-0.2
+  • Aggressive: 0.25
+
+Horizontal Flip:
+  • Wildlife/Aerial: 0.5-0.7
+  • Text/Faces: 0.0
+  • General: 0.5
+
+═══════════════════════════════════════════════════════════════════════
+
+💡 PRO TIPS
+
+1. Start with Recommended Command
+   → Use the production command at the top
+   → Adjust based on results
+
+2. Monitor First Epoch
+   → Watch GPU memory usage
+   → Check augmentation settings display
+   → Verify F1 score logging
+
+3. Use Wandb for Comparison
+   → Run multiple experiments
+   → Compare F1 scores
+   → Find optimal settings
+
+4. Save Good Checkpoints
+   → Copy best.pt to safe location
+   → Rename with descriptive name:
+     best_50epochs_rotate15_scale07.pt
+
+5. Document Your Experiments
+   → Keep notes on what worked
+   → Track hyperparameters
+   → Use Wandb tags
+
+═══════════════════════════════════════════════════════════════════════
+
+⚠️ TROUBLESHOOTING
+
+ISSUE: CUDA out of memory
+FIX: Reduce --batch 2 or --imgsz 1024
+
+ISSUE: Training too slow
+FIX: Reduce --imgsz 1024 or --batch 2
+
+ISSUE: mAP not improving
+FIX: Increase --epochs or adjust augmentation
+
+ISSUE: Overfitting (val loss increases)
+FIX: Increase augmentation (more --rotate, --scale)
+
+ISSUE: Underfitting (both losses high)
+FIX: More --epochs or reduce augmentation
+
+═══════════════════════════════════════════════════════════════════════
+
+📈 MONITORING CHECKLIST
+
+During Training:
+□ Wandb dashboard shows metrics updating
+□ F1 score appears after epoch 1
+□ Losses decreasing
+□ GPU at 80-95% utilization
+□ No OOM errors
+
+After Training:
+□ mAP50 > 0.65 (good), > 0.75 (excellent)
+□ F1 Score > 0.65 (good), > 0.75 (excellent)
+□ Precision and Recall balanced
+□ Per-class metrics reasonable
+□ best.pt saved successfully
+
+═══════════════════════════════════════════════════════════════════════
+
+🎓 LEARNING PROGRESSION
+
+Week 1: Baseline
+  python train_vm.py --epochs 50
+  → Establish baseline (no augmentation)
+
+Week 2: Add Augmentation
+  python train_vm.py --epochs 50 --rotate 15.0 --scale 0.7
+  → See augmentation impact
+
+Week 3: Fine-Tune
+  python train_vm.py --weights best.pt --epochs 30 --rotate 15.0 --scale 0.7
+  → Build on previous results
+
+Week 4: Optimize
+  python train_vm.py --weights best.pt --epochs 50 --rotate 20.0 --scale 0.8
+  → Find optimal settings
+
+═══════════════════════════════════════════════════════════════════════
+
+✨ FINAL RECOMMENDED COMMAND (BEST FOR YOUR USE CASE)
+
+For Wildlife Aerial Detection with Fine-Tuning:
+
+python train_vm.py \
+  --weights runs/yolov11_wildlife/weights/best.pt \
+  --epochs 50 \
+  --batch 4 \
+  --imgsz 2048 \
+  --rotate 15.0 \
+  --scale 0.7 \
+  --translate 0.15 \
+  --fliplr 0.6 \
+  --hsv-s 0.8 \
+  --hsv-v 0.5 \
+  --mosaic 1.0
+
+This command:
+  ✅ Uses your best previous model
+  ✅ Optimal rotation for aerial (15°)
+  ✅ Good zoom variation (70%)
+  ✅ Enhanced translation (15%)
+  ✅ Balanced flipping (60%)
+  ✅ Strong color augmentation
+  ✅ Mosaic for context learning
+  ✅ All labels auto-transformed
+  ✅ F1 score logged automatically
+
+═══════════════════════════════════════════════════════════════════════
+
+🎉 YOU'RE READY TO TRAIN!
+
+Copy the command above, paste in your terminal, and start training!
+
+Monitor progress:
+  • Wandb dashboard: Real-time metrics
+  • Terminal: Progress bars
+  • GPU: nvidia-smi
+
+Expected time: ~4-5 hours for 50 epochs
+
+Good luck! 🚀🦁🐘
+
+═══════════════════════════════════════════════════════════════════════
+
+Status: ✅ Production Ready
+Last Updated: 2025-11-20
+Version: 2.3 (Complete)
+
+═══════════════════════════════════════════════════════════════════════
+

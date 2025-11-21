@@ -1,0 +1,101 @@
+╔═══════════════════════════════════════════════════════════════════════╗
+║              QUICK REFERENCE: Custom Weights (--weights)              ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+⚡ WHAT IS IT?
+
+Load a pretrained model (like best.pt) to continue training or fine-tune.
+
+═══════════════════════════════════════════════════════════════════════
+
+📋 BASIC USAGE
+
+# Use your best model from previous training
+python train_vm.py --weights runs/yolov11_wildlife/weights/best.pt --epochs 30
+
+# Use last checkpoint (if interrupted)
+python train_vm.py --weights runs/yolov11_wildlife/weights/last.pt --epochs 50
+
+# Use with other options
+python train_vm.py --weights runs/.../best.pt --epochs 30 --batch 4 --imgsz 2048
+
+═══════════════════════════════════════════════════════════════════════
+
+🎯 COMMON SCENARIOS
+
+1️⃣  Continue Training (More Epochs)
+    python train_vm.py --weights runs/.../best.pt --epochs 30
+
+2️⃣  Resume Interrupted Training
+    python train_vm.py --weights runs/.../last.pt --epochs 50
+
+3️⃣  Try Different Image Size
+    python train_vm.py --weights runs/.../best.pt --imgsz 1024 --batch 8 --epochs 20
+
+4️⃣  Try Different Batch Size
+    python train_vm.py --weights runs/.../best.pt --batch 2 --epochs 30
+
+═══════════════════════════════════════════════════════════════════════
+
+📁 WHERE ARE CHECKPOINTS?
+
+runs/yolov11_wildlife/weights/
+├── best.pt      ← Highest mAP (USE THIS!)
+├── last.pt      ← Last epoch
+└── epoch_*.pt   ← Specific epochs
+
+Full path:
+  /home/estudiante/grupo_12/subsaharian_dataset/yolo_vm/runs/yolov11_wildlife/weights/
+
+═══════════════════════════════════════════════════════════════════════
+
+✅ BENEFITS
+
+• Faster convergence (already trained)
+• Better results (build on previous training)
+• Experiment with settings (try different configs)
+• Resume training (if interrupted)
+
+═══════════════════════════════════════════════════════════════════════
+
+📊 COMPARISON
+
+WITHOUT --weights (from scratch):
+  python train_vm.py --epochs 50
+  • Starts from yolo11s.pt (COCO pretrained)
+  • Takes ~50-100 epochs to converge
+  • Good for initial training
+
+WITH --weights (fine-tuning):
+  python train_vm.py --weights runs/.../best.pt --epochs 30
+  • Starts from your trained model
+  • Takes ~20-50 epochs to improve
+  • Good for refinement
+
+═══════════════════════════════════════════════════════════════════════
+
+💡 BEST PRACTICES
+
+1. Use best.pt (not last.pt) for fine-tuning
+2. Use fewer epochs (20-50 instead of 50-100)
+3. Keep backups of good checkpoints
+4. Track experiments with Wandb
+
+═══════════════════════════════════════════════════════════════════════
+
+❌ TROUBLESHOOTING
+
+ERROR: "Weights file not found"
+FIX: Check path with: ls runs/yolov11_wildlife/weights/
+
+ERROR: "CUDA out of memory"
+FIX: Reduce batch: --batch 2 or --imgsz 1024
+
+═══════════════════════════════════════════════════════════════════════
+
+📚 FULL GUIDE
+
+See: CUSTOM_WEIGHTS_GUIDE.txt for detailed documentation
+
+═══════════════════════════════════════════════════════════════════════
+
