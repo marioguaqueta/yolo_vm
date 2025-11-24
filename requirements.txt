@@ -1,29 +1,4 @@
-# YOLOv11 Wildlife Detection Training Requirements
-# Python 3.8+
-
-# Deep Learning Framework
-torch>=2.0.0
-torchvision>=0.15.0
-
-# YOLO
-ultralytics>=8.0.0
-
-# Data Processing
-pandas>=1.5.0
-numpy>=1.21.0
-pillow>=9.0.0
-opencv-python>=4.7.0
-
-# Configuration
-pyyaml>=6.0
-
-# Experiment Tracking
-wandb>=0.15.0
-
-# Visualization
-matplotlib>=3.5.0
-seaborn>=0.12.0
-
-# Utils
-tqdm>=4.65.0
-
+opencv-python
+pandas
+numpy
+tqdm
