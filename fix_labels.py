@@ -18,7 +18,7 @@ from tqdm import tqdm
 # ============================================================================
 
 BASE_DIR = Path(__file__).parent.absolute()
-DATASET_ROOT = BASE_DIR.parent / "general_dataset_balanced" / "general_dataset_balanced"
+DATASET_ROOT = BASE_DIR.parent / "general_dataset_balanced" / "general_dataset_balanced" 
 
 # ============================================================================
 # MAIN
@@ -44,29 +44,33 @@ def fix_labels_in_dir(label_dir: Path):
         for line in lines:
             parts = line.strip().split()
             if len(parts) >= 5:
-                # Parse class ID
                 cls_id = int(parts[0])
                 
-                # Check if it looks like 1-6 range (and not already 0-5)
-                # If we see a '6', it's definitely wrong.
-                # If we see a '0', it might already be fixed.
-                # Since your CSV had [1,2,3,4,5,6], we simply subtract 1.
+                # LOGIC:
+                # If label is 6, it MUST be fixed (6 -> 5).
+                # If label is > 5, it's definitely wrong.
+                # If label is 0, it's likely already fixed or correct (Buffalo).
+                # We assume the error is a 1-based shift.
                 
-                if cls_id > 0: # Only subtract if > 0 (assuming 1-based)
-                     # Wait, if we run this twice it will break. 
-                     # Let's be safer: check if max label in dataset is 6?
-                     # For now, simply subtract 1 as requested.
-                     new_cls_id = cls_id - 1
-                     parts[0] = str(new_cls_id)
-                     new_lines.append(" ".join(parts))
-                     modified = True
+                if cls_id > 5:
+                    new_cls_id = cls_id - 1
+                    parts[0] = str(new_cls_id)
+                    new_lines.append(" ".join(parts))
+                    modified = True
+                elif cls_id > 0:
+                    # Check if we should subtract. 
+                    # If we have a mix of 0-5 and 1-6, this is tricky.
+                    # But the error says "Label class 6 exceeds...".
+                    # This implies we definitely have 6s.
+                    # Let's assume ALL non-zero labels > 5 need shifting, 
+                    # OR if we want to force 1-6 -> 0-5 mapping:
+                    new_cls_id = cls_id - 1
+                    parts[0] = str(new_cls_id)
+                    new_lines.append(" ".join(parts))
+                    modified = True
                 else:
-                    # If it's 0, keep it (maybe buffalo?) OR it's already fixed?
-                    # If the original CSV had NO 0s, then 0 is impossible unless fixed.
-                    # But if we blindly subtract, 0 becomes -1.
-                    if cls_id == 0:
-                        print(f"⚠ Found label 0 in {file_path.name}. Is it already fixed?")
-                        new_lines.append(line.strip())
+                    # Label is 0. Keep it.
+                    new_lines.append(line.strip())
             else:
                 new_lines.append(line.strip())
                 

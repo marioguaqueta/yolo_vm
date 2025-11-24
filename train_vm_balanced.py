@@ -194,6 +194,37 @@ def initialize_wandb(config: Config, enabled: bool = True):
 
 
 # ============================================================================
+# CALLBACKS
+# ============================================================================
+
+def on_fit_epoch_end(trainer):
+    """
+    Callback to compute F1 from precision/recall and log both raw and smoothed curves.
+    """
+    if wandb.run is None:
+        return
+
+    metrics = trainer.metrics
+    p_key = "metrics/precision(B)"
+    r_key = "metrics/recall(B)"
+
+    if p_key in metrics and r_key in metrics:
+        precision = metrics[p_key]
+        recall = metrics[r_key]
+        if (precision + recall) > 0:
+            f1 = 2 * (precision * recall) / (precision + recall)
+        else:
+            f1 = 0.0
+
+        wandb.log(
+            {
+                "metrics/f1_score": f1,
+                "epoch": trainer.epoch,
+            }
+        )
+
+
+# ============================================================================
 # TRAINING
 # ============================================================================
 
@@ -207,6 +238,10 @@ def train_model(config: Config, yaml_path: Path, use_wandb: bool = True):
         torch.cuda.empty_cache()
 
     model = YOLO(config.MODEL)
+
+    if use_wandb:
+        model.add_callback("on_fit_epoch_end", on_fit_epoch_end)
+        print("✓ Added custom F1 logging callback")
 
     train_args = {
         "data": str(yaml_path),
