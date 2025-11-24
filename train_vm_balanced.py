@@ -31,7 +31,7 @@ class Config:
     # Paths
     BASE_DIR = Path(__file__).parent.absolute()
     # POINTING TO THE NEW BALANCED DATASET
-    DATASET_ROOT = BASE_DIR.parent / "general_dataset_balanced"
+    DATASET_ROOT = BASE_DIR.parent / "general_dataset_balanced" / "general_dataset_balanced"
 
     # Dataset structure (YOLO standard)
     IMAGES_TRAIN = DATASET_ROOT / "images" / "train"
