@@ -267,12 +267,84 @@ def train_model(config: Config, yaml_path: Path, use_wandb: bool = True):
     return model, results
 
 
+
+# ============================================================================
+# TUNING (GENETIC EVOLUTION)
+# ============================================================================
+
+def custom_search_space(trial=None):
+    """
+    Defines the hyperparameter search space for Genetic Evolution.
+    Returns a dictionary of parameter distributions.
+    """
+    return {
+        # Optimizer parameters
+        "lr0": (1e-5, 1e-2),             # Initial learning rate
+        "lrf": (0.01, 1.0),              # Final learning rate (lr0 * lrf)
+        "momentum": (0.6, 0.98),         # SGD momentum/Adam beta1
+        "weight_decay": (0.0, 0.001),    # Optimizer weight decay
+        "warmup_epochs": (0.0, 5.0),     # Warmup epochs
+        
+        # Augmentation parameters
+        "degrees": (0.0, 45.0),          # Rotation (+/- deg)
+        "scale": (0.0, 0.9),             # Image scale (+/- gain)
+        "translate": (0.0, 0.9),         # Image translation (+/- fraction)
+        "hsv_h": (0.0, 0.1),             # Image HSV-Hue augmentation
+        "hsv_s": (0.0, 0.9),             # Image HSV-Saturation augmentation
+        "hsv_v": (0.0, 0.9),             # Image HSV-Value augmentation
+        "fliplr": (0.0, 1.0),            # Image flip left-right (probability)
+        "mosaic": (0.0, 1.0),            # Image mosaic (probability)
+        "mixup": (0.0, 1.0),             # Image mixup (probability)
+        "copy_paste": (0.0, 1.0),        # Segment copy-paste (probability)
+    }
+
+def tune_model(config: Config, yaml_path: Path):
+    print("\n" + "=" * 70)
+    print("STARTING HYPERPARAMETER EVOLUTION (GENETIC ALGORITHM)")
+    print("=" * 70)
+    
+    # Tuning settings (hardcoded for reasonable defaults, can be exposed if needed)
+    EPOCHS_PER_GEN = 15
+    ITERATIONS = 30
+    
+    print(f"Model: {config.MODEL}")
+    print(f"Generations: {ITERATIONS}")
+    print(f"Epochs per Gen: {EPOCHS_PER_GEN}")
+    
+    model = YOLO(config.MODEL)
+    
+    print("\nStarting evolution... This will take time.")
+    print("Check 'runs/detect/wildlife_evolution/tune' for progress.")
+    
+    model.tune(
+        data=str(yaml_path),
+        epochs=EPOCHS_PER_GEN,
+        iterations=ITERATIONS,
+        optimizer=config.OPTIMIZER,
+        plots=True,
+        save=False,
+        val=True,
+        imgsz=1024,      # Faster tuning at slightly lower res
+        batch=16,        # Maximize batch for speed
+        space=custom_search_space,
+        name="wildlife_evolution"
+    )
+    
+    print("\n" + "=" * 70)
+    print("EVOLUTION COMPLETE")
+    print("=" * 70)
+    print("1. Go to 'runs/detect/wildlife_evolution/tune'")
+    print("2. Look for 'best_hyperparameters.yaml'")
+    print("3. Update Config class in this script with the new values.")
+
+
 # ============================================================================
 # MAIN
 # ============================================================================
 
 def main():
-    parser = argparse.ArgumentParser(description="Train YOLOv11x High-Performance")
+    parser = argparse.ArgumentParser(description="Train or Tune YOLOv11x High-Performance")
+    parser.add_argument("--tune", action="store_true", help="Run hyperparameter evolution instead of training")
     parser.add_argument("--no-wandb", action="store_true", help="Disable WandB logging")
     parser.add_argument("--batch", type=int, help="Override batch size")
     parser.add_argument("--epochs", type=int, help="Override epochs")
@@ -294,6 +366,12 @@ def main():
         return 1
 
     yaml_path = create_data_yaml(config)
+
+    # BRANCH: TUNING OR TRAINING
+    if args.tune:
+        tune_model(config, yaml_path)
+        return 0
+
     wandb_run = initialize_wandb(config, enabled=not args.no_wandb)
 
     try:
