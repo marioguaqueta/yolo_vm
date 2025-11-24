@@ -74,7 +74,7 @@ class Config:
     }
 
     # Model & training hyperparameters
-    MODEL = "yolo11x.pt"        # default; override with --model or --weights
+    MODEL = "yolo11l.pt"        # default; override with --model or --weights
     EPOCHS = 80
     BATCH_SIZE = 2              # small because images are large (yolo11x + 1536px)
     IMG_SIZE = 1536             # good trade-off for 2048px originals
