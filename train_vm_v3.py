@@ -326,7 +326,7 @@ def tune_model(config: Config, yaml_path: Path):
         val=True,
         imgsz=1024,      # Faster tuning at slightly lower res
         batch=16,        # Maximize batch for speed
-        space=custom_search_space,
+        space=custom_search_space(), # Pass the dictionary, not the function
         name="wildlife_evolution"
     )
     
