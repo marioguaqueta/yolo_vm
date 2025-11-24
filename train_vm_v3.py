@@ -349,10 +349,16 @@ def main():
     parser.add_argument("--batch", type=int, help="Override batch size")
     parser.add_argument("--epochs", type=int, help="Override epochs")
     
+    parser.add_argument("--weights", type=str, help="Custom weights path (e.g. runs/.../best.pt)")
+    
     args = parser.parse_args()
 
     config = Config()
     
+    if args.weights:
+        config.MODEL = args.weights
+        print(f"✓ Using custom weights: {config.MODEL}")
+
     if args.batch:
         config.BATCH_SIZE = args.batch
     if args.epochs:
