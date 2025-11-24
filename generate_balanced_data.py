@@ -254,8 +254,13 @@ def main():
         # Parse boxes for this image
         boxes = []
         for _, row in group.iterrows():
-            boxes.append([row['Label'], row['x1'], row['y1'], row['x2'], row['y2']])
-            class_counts[row['Label']] += 1
+            # REMAP LABELS: CSV is 1-6, YOLO needs 0-5
+            label = int(row['Label']) - 1
+            if 0 <= label <= 5:
+                boxes.append([label, row['x1'], row['y1'], row['x2'], row['y2']])
+                class_counts[label] += 1
+            else:
+                print(f"⚠ Warning: Ignoring invalid label {row['Label']} in {img_name}")
             
         # Generate crops for EACH object in the image
         # To balance, we can repeat this loop for rare classes
